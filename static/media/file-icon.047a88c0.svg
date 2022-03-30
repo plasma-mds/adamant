@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="64.812332mm"
+   height="78.739998mm"
+   viewBox="0 0 64.812332 78.739998"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
+   sodipodi:docname="file-icon.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="0.72337262"
+     inkscape:cx="212.20046"
+     inkscape:cy="180.40495"
+     inkscape:window-width="1920"
+     inkscape:window-height="1001"
+     inkscape:window-x="-9"
+     inkscape:window-y="-9"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2">
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath838">
+      <path
+         d="M 0,3.6621e-4 H 992.16 V 1048.9204 H 0 Z"
+         clip-rule="evenodd"
+         id="path836" />
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath858">
+      <path
+         d="M 1.4784e-5,0 H 992.16001 V 1048.92 H 1.4784e-5 Z"
+         clip-rule="evenodd"
+         id="path856" />
+    </clipPath>
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-49.01467,-42.294702)">
+    <g
+       id="g830"
+       inkscape:label="file-icon"
+       transform="matrix(0.35277777,0,0,-0.35277777,-57.961661,296.21003)">
+      <g
+         id="g832">
+        <g
+           id="g834"
+           clip-path="url(#clipPath838)" />
+      </g>
+      <path
+         d="m 332.48,718.26 h 99.58 l 53.4,-53.4 V 511.28 c 0,-7.3 -5.92,-13.22 -13.22,-13.22 H 332.48 c -7.3,0 -13.22,5.92 -13.22,13.22 v 193.76 c 0,7.3 5.92,13.22 13.22,13.22 z"
+         style="fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:none"
+         id="path842" />
+      <path
+         d="m 332.48,718.26 h 99.58 l 53.4,-53.4 V 511.28 c 0,-7.3 -5.92,-13.22 -13.22,-13.22 H 332.48 c -7.3,0 -13.22,5.92 -13.22,13.22 v 193.76 c 0,7.3 5.92,13.22 13.22,13.22 z"
+         style="fill:none;stroke:#000000;stroke-width:3;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-dasharray:none;stroke-opacity:1"
+         id="path844" />
+      <path
+         d="m 486.06,664.26 h -41.33 c -7.3,0 -13.21,5.92 -13.21,13.22 0,13.8 -0.3,40.78 -0.3,40.78"
+         style="fill:none;stroke:#000000;stroke-width:3;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-dasharray:none;stroke-opacity:1"
+         id="path846" />
+      <path
+         d="m 304.74,645.87 c 0,0.81 0.66,1.47 1.47,1.47 h 123.54 c 0.81,0 1.47,-0.66 1.47,-1.47 v -44.22 c 0,-0.81 -0.66,-1.47 -1.47,-1.47 H 306.21 c -0.81,0 -1.47,0.66 -1.47,1.47 z"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:none"
+         id="path848" />
+      <path
+         d="m 304.74,645.87 c 0,0.81 0.66,1.47 1.47,1.47 h 123.54 c 0.81,0 1.47,-0.66 1.47,-1.47 v -44.22 c 0,-0.81 -0.66,-1.47 -1.47,-1.47 H 306.21 c -0.81,0 -1.47,0.66 -1.47,1.47 z"
+         style="fill:none;stroke:#000000;stroke-width:3;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-dasharray:none;stroke-opacity:1"
+         id="path850" />
+      <g
+         id="g852">
+        <g
+           id="g854"
+           clip-path="url(#clipPath858)">
+          <text
+             transform="matrix(1,0,0,-1,324.62,608.88)"
+             style="font-variant:normal;font-weight:bold;font-size:39.96px;font-family:Arial;-inkscape-font-specification:Arial-BoldMT;writing-mode:lr-tb;fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+             id="text862"><tspan
+               x="0 24.41556 35.524441 59.939999"
+               y="0"
+               sodipodi:role="line"
+               id="tspan860">FILE</tspan></text>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>
