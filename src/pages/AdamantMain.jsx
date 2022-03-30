@@ -847,7 +847,7 @@ const AdamantMain = () => {
       return;
     }
     // create description list
-    let footnote = `<div> This template was generated with <span><a title=https://github.com/csihda/adamant href=https://github.com/csihda/adamant>ADAMANT v1.0.0</a></span> </div>`;
+    let footnote = `<div> This template was generated with <span><a title=https://github.com/plasma-mds/adamant href=https://github.com/plasma-mds/adamant>ADAMANT v1.0.0</a></span> </div>`;
     let descList = createDescriptionListFromJSON(
       cleaned,
       convSch,
@@ -1094,7 +1094,7 @@ const AdamantMain = () => {
       return;
     }
     // create description list
-    let footnote = `<div> This template was generated with <span><a title=https://github.com/csihda/adamant href=https://github.com/csihda/adamant>ADAMANT v1.0.0</a></span> </div>`;
+    let footnote = `<div> This template was generated with <span><a title=https://github.com/plasma-mds/adamant href=https://github.com/plasma-mds/adamant>ADAMANT v1.0.0</a></span> </div>`;
     let descList = createDescriptionListFromJSON(
       cleaned,
       convSch,
@@ -1259,7 +1259,7 @@ const AdamantMain = () => {
                   <Button
                     onClick={() => {
                       window.open(
-                        "https://github.com/csihda/adamant",
+                        "https://github.com/plasma-mds/adamant",
                         "_blank" // <- This is what makes it open in a new window.
                       );
                     }}
