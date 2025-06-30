@@ -1,31 +1,31 @@
 {
   "files": {
-    "main.css": "/static/css/main.d27b4cd3.chunk.css",
-    "main.js": "/static/js/main.077651d8.chunk.js",
-    "main.js.map": "/static/js/main.077651d8.chunk.js.map",
-    "runtime-main.js": "/static/js/runtime-main.e087d208.js",
-    "runtime-main.js.map": "/static/js/runtime-main.e087d208.js.map",
-    "static/css/2.f4c56af9.chunk.css": "/static/css/2.f4c56af9.chunk.css",
-    "static/js/2.69f1e533.chunk.js": "/static/js/2.69f1e533.chunk.js",
-    "static/js/2.69f1e533.chunk.js.map": "/static/js/2.69f1e533.chunk.js.map",
-    "index.html": "/index.html",
-    "static/css/2.f4c56af9.chunk.css.map": "/static/css/2.f4c56af9.chunk.css.map",
-    "static/css/main.d27b4cd3.chunk.css.map": "/static/css/main.d27b4cd3.chunk.css.map",
-    "static/js/2.69f1e533.chunk.js.LICENSE.txt": "/static/js/2.69f1e533.chunk.js.LICENSE.txt",
-    "static/media/adamant-header-5.e6d4be72.svg": "/static/media/adamant-header-5.e6d4be72.svg",
-    "static/media/adamant-new-logo.6062d472.ico": "/static/media/adamant-new-logo.6062d472.ico",
-    "static/media/browse-edit-exp.c7489702.svg": "/static/media/browse-edit-exp.c7489702.svg",
-    "static/media/file-icon.047a88c0.svg": "/static/media/file-icon.047a88c0.svg",
-    "static/media/fileloading.d5ee732d.gif": "/static/media/fileloading.d5ee732d.gif",
-    "static/media/json-file-svgrepo-com.805d27de.svg": "/static/media/json-file-svgrepo-com.805d27de.svg",
-    "static/media/process_request.415fa9f3.svg": "/static/media/process_request.415fa9f3.svg",
-    "static/media/request_analysis.50557b42.svg": "/static/media/request_analysis.50557b42.svg"
+    "main.css": "/adamant/static/css/main.d27b4cd3.chunk.css",
+    "main.js": "/adamant/static/js/main.89b41233.chunk.js",
+    "main.js.map": "/adamant/static/js/main.89b41233.chunk.js.map",
+    "runtime-main.js": "/adamant/static/js/runtime-main.50f17488.js",
+    "runtime-main.js.map": "/adamant/static/js/runtime-main.50f17488.js.map",
+    "static/css/2.f4c56af9.chunk.css": "/adamant/static/css/2.f4c56af9.chunk.css",
+    "static/js/2.69f1e533.chunk.js": "/adamant/static/js/2.69f1e533.chunk.js",
+    "static/js/2.69f1e533.chunk.js.map": "/adamant/static/js/2.69f1e533.chunk.js.map",
+    "index.html": "/adamant/index.html",
+    "static/css/2.f4c56af9.chunk.css.map": "/adamant/static/css/2.f4c56af9.chunk.css.map",
+    "static/css/main.d27b4cd3.chunk.css.map": "/adamant/static/css/main.d27b4cd3.chunk.css.map",
+    "static/js/2.69f1e533.chunk.js.LICENSE.txt": "/adamant/static/js/2.69f1e533.chunk.js.LICENSE.txt",
+    "static/media/adamant-header-5.e6d4be72.svg": "/adamant/static/media/adamant-header-5.e6d4be72.svg",
+    "static/media/adamant-new-logo.6062d472.ico": "/adamant/static/media/adamant-new-logo.6062d472.ico",
+    "static/media/browse-edit-exp.c7489702.svg": "/adamant/static/media/browse-edit-exp.c7489702.svg",
+    "static/media/file-icon.047a88c0.svg": "/adamant/static/media/file-icon.047a88c0.svg",
+    "static/media/fileloading.d5ee732d.gif": "/adamant/static/media/fileloading.d5ee732d.gif",
+    "static/media/json-file-svgrepo-com.805d27de.svg": "/adamant/static/media/json-file-svgrepo-com.805d27de.svg",
+    "static/media/process_request.415fa9f3.svg": "/adamant/static/media/process_request.415fa9f3.svg",
+    "static/media/request_analysis.50557b42.svg": "/adamant/static/media/request_analysis.50557b42.svg"
   },
   "entrypoints": [
-    "static/js/runtime-main.e087d208.js",
+    "static/js/runtime-main.50f17488.js",
     "static/css/2.f4c56af9.chunk.css",
     "static/js/2.69f1e533.chunk.js",
     "static/css/main.d27b4cd3.chunk.css",
-    "static/js/main.077651d8.chunk.js"
+    "static/js/main.89b41233.chunk.js"
   ]
 }
