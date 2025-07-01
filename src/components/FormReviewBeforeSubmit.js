@@ -10,7 +10,7 @@ import CloseIcon from '@material-ui/icons/Close';
 import { Menu, MenuItem } from "@material-ui/core";
 
 
-const FormReviewBeforeSubmit = ({ onlineMode, openFormReviewDialog, setOpenFormReviewDialog, descriptionList, setOpenFunctions, submitFunctions, submitText }) => {
+const FormReviewBeforeSubmit = ({ onlineMode, openFormReviewDialog, setOpenFormReviewDialog, descriptionList, setOpenFunctions, submitFunctions, submitText, endPoint, loadedFiles }) => {
 
     // for dropdown buttons
     const [anchorEl, setAnchorEl] = useState(null);
@@ -21,6 +21,21 @@ const FormReviewBeforeSubmit = ({ onlineMode, openFormReviewDialog, setOpenFormR
     const handleClose = () => {
         setAnchorEl(null);
     }; //
+
+    //createElabFTWButton disable when
+    endPoint = endPoint.split("/").slice(-1)
+
+    const validateLoadedFiles = () => {
+        console.log(loadedFiles)
+        if (loadedFiles.includes(undefined)) {
+            alert("Some files are not assigned to the metadata. Please complete the process.")
+            setOpenFormReviewDialog(false)
+        } else {
+            setOpenFunctions.setOpenDatasetSubmissionDialog(true);
+            setOpenFormReviewDialog(false);
+        }
+    }
+
 
     return (<>
         <Dialog
@@ -83,11 +98,16 @@ const FormReviewBeforeSubmit = ({ onlineMode, openFormReviewDialog, setOpenFormR
                     }} >
                         Create eLabFTW Experiment
                     </MenuItem>
-                    <MenuItem disabled={!onlineMode} onClick={() => {
+                    <MenuItem disabled={!onlineMode || endPoint.includes("process-request")} onClick={() => {
                         submitFunctions.submitJobRequest();
                         setOpenFormReviewDialog(false);
                     }} >
                         {submitText}
+                    </MenuItem>
+                    <MenuItem disabled={!onlineMode} onClick={() => {
+                        validateLoadedFiles()
+                    }} >
+                        Submit Dataset
                     </MenuItem>
                 </Menu>
             </DialogActions>

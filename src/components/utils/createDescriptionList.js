@@ -32,8 +32,9 @@ const createDescriptionList = (data) => {
             //descList += "</dl>\n"
         } else {
             let pathArr = element["path"].split(".");
-            let titleDiv = `<dt style="background-color: #ffffff; border: 0px; height: 10px;"></dt>\n`
-            titleDiv += `<dt style="background-color: #ffffff; border: 0px;">`
+            //let titleDiv = `<div style="background-color: #ffffff; border: 0px; height: 10px;"></div>\n`
+            let titleDiv = `</dl>`
+            titleDiv += `<div style="background-color: #ffffff; border: 0px;">`
             pathArr.forEach((item, index) => {
                 if (element["pathURIs"] !== undefined & !element["pathURIs"].some(emptyString)) {
                     if (item !== "") {
@@ -60,7 +61,8 @@ const createDescriptionList = (data) => {
                     }
                 }
             })
-            titleDiv += "</dt>\n"
+            titleDiv += "</div>\n"
+            titleDiv += "<dl>"
 
             descList += titleDiv
             //descList += "<dl>\n";

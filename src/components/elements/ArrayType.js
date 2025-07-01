@@ -74,7 +74,7 @@ const AccordionSummary = withStyles({
 const ArrayType = ({ adamant_field_error, adamant_error_description, maxItems, minItems, uniqueItems, oSetDataInputItems, oDataInputItems, withinObject, withinArray, field_uri, value, pathFormData, path, pathSchema, field_required, field_key, field_index, edit, field_label, field_description, field_items, field_prefixItems }) => {
     const [openDialog, setOpenDialog] = useState(false);
     const [expand, setExpand] = useState(true);
-    const { handleLoadedFiles, handleRemoveFile, loadedFiles, updateParent, convertedSchema, handleDataDelete, handleConvertedDataInput } = useContext(FormContext);
+    const { handleLoadedFiles, handleRemoveFile, loadedFiles, setLoadedFiles, updateParent, convertedSchema, handleDataDelete, handleConvertedDataInput, openDatasetSubmissionDialog } = useContext(FormContext);
     const [inputItems, setInputItems] = useState([]);
     const [dataInputItems, setDataInputItems] = useState([]);
     //const [descriptionText, setDescriptionText] = useState(field_description !== undefined ? field_description : "")
@@ -87,7 +87,13 @@ const ArrayType = ({ adamant_field_error, adamant_error_description, maxItems, m
             setDataInputItems([{}])
         }
 
-    },[field_items])
+        if (value !== undefined) {
+            if (value.length !== 0 && loadedFiles.length === 0){
+                setLoadedFiles(Array(value.length))
+            }
+        }
+
+    },[field_items, value])
 
     useEffect(() => {
         //console.log("currentFiles length:", currentFiles.length)
@@ -121,11 +127,11 @@ const ArrayType = ({ adamant_field_error, adamant_error_description, maxItems, m
             // after that insert the files
             if (inputItemIndex !== undefined) {
                 desiredValues = {
-                    "file": `fileupload:${acceptedFile["type"]};${acceptedFile["name"]};${acceptedFile["size"]}`,
+                    //"file": `fileupload:${acceptedFile["type"]};${acceptedFile["name"]};${acceptedFile["size"]}`,
                     "fileName": acceptedFile["name"],
                     "filetype": acceptedFile["type"]
                 }
-                let fileAlreadyExist = handleLoadedFiles(acceptedFile)
+                let fileAlreadyExist = handleLoadedFiles(acceptedFile, value)
                 //console.log("does the file already exist?", fileAlreadyExist)
                 if (!fileAlreadyExist) {
                     handleAddArrayItem(desiredValues, inputItemIndex)
@@ -160,7 +166,7 @@ const ArrayType = ({ adamant_field_error, adamant_error_description, maxItems, m
                         "filetype": acceptedFile["type"]
                     }
                 }
-                let fileAlreadyExist = handleLoadedFiles(acceptedFile)
+                let fileAlreadyExist = handleLoadedFiles(acceptedFile, value)
                 if (!fileAlreadyExist) {
                     handleAddArrayItem(desiredValues)
                     let val = currentFiles
@@ -379,6 +385,8 @@ const ArrayType = ({ adamant_field_error, adamant_error_description, maxItems, m
 
     // update the order in properties on drag end
     const handleOnDragEnd = (result) => {
+        if (result === null) return;
+
         if (!result.destination) return;
 
         if (withinObject & withinArray) {
@@ -395,6 +403,13 @@ const ArrayType = ({ adamant_field_error, adamant_error_description, maxItems, m
             const [reorderedItem2] = items2.splice(result.source.index, 1);
             items2.splice(result.destination.index, 0, reorderedItem2);
             setDataInputItems(items2)
+
+            // for loadedFiles
+            let files = loadedFiles
+            const items3 = Array.from(files)
+            const [reorderedItem3] = items3.splice(result.source.index, 1)
+            items3.splice(result.destination.index, 0, reorderedItem3)
+            setLoadedFiles(items3)
 
             /*
 
@@ -424,6 +439,13 @@ const ArrayType = ({ adamant_field_error, adamant_error_description, maxItems, m
             // conv. schema data
             handleConvertedDataInput(items2, path + ".value", "array")
 
+            // for loadedFiles
+            let files = loadedFiles
+            const items3 = Array.from(files)
+            const [reorderedItem3] = items3.splice(result.source.index,1)
+            items3.splice(result.destination.index, 0, reorderedItem3)
+            setLoadedFiles(items3)
+            console.log(items3)
         }
     }
 
@@ -681,6 +703,8 @@ const ArrayType = ({ adamant_field_error, adamant_error_description, maxItems, m
                     if (keyword !== undefined) {
                         const fileIndex = getFileIndex(loadedFiles, keyword)
                         handleRemoveFile(fileIndex)
+                    } else {
+                        handleRemoveFile(index)
                     }
                 }
             }
@@ -706,7 +730,6 @@ const ArrayType = ({ adamant_field_error, adamant_error_description, maxItems, m
     // handle read data files, to load a selection of files and to integrate their metadata
     const onDrop = useCallback(
         (acceptedFile) => {
-
             setCurrentFiles(acceptedFile)
         },
         [setCurrentFiles])
@@ -738,7 +761,7 @@ const ArrayType = ({ adamant_field_error, adamant_error_description, maxItems, m
                     }
                 }} >
                 <AccordionSummary
-                    style={inputError ? { backgroundColor: "white", borderRadius: "4px", borderBottom: '1px solid  #ff7961' } : { backgroundColor: "rgba(232, 244, 253, 1)", borderBottom: '1px solid  rgba(0, 0, 0, .0)' }}
+                    style={inputError ? { backgroundColor: "white", borderRadius: "4px", borderBottom: '1px solid  #ff7961', height: `${expand ? "auto" : "10px"}` } : { backgroundColor: "rgba(232, 244, 253, 1)", borderBottom: '1px solid  rgba(0, 0, 0, .0)', height: `${expand ? "auto" : "10px"}` }}
                     expandIcon={/*withinObject ? null : */
                         <Tooltip placement="top" title={`Collapse/Expand this container`}>
                             <ExpandMoreIcon />
@@ -751,8 +774,8 @@ const ArrayType = ({ adamant_field_error, adamant_error_description, maxItems, m
                 >
                     <div style={{ paddingTop: "10px", paddingBottom: "10px", display: 'inline-flex', width: '100%' }}>
                         <div style={{ width: "100%" }}>
-                            <Typography style={inputError ? { color: "#ff7961", width: "100%" } : { width: "100%" }} className={classes.heading}>{field_label + (required ? "*" : "")} {dataInputItems.length > 0 ? `| ${dataInputItems.length} item(s)` : null} </Typography>
-                            {expand ? <div style={inputError ? { color: "#ff7961" } : { color: "gray" }}>
+                            <Typography style={inputError ? { color: "#ff7961", width: "100%", fontSize: "13pt", lineHeight: `${expand ? "" : "40px"}` } : { width: "100%", fontSize: "13pt", lineHeight: `${expand ? "": "40px"}` }} className={classes.heading}>{field_label + (required ? "*" : "")} {dataInputItems.length > 0 ? `| ${dataInputItems.length} item(s)` : null} </Typography>
+                            {expand ? <div style={inputError ? { color: "#ff7961", fontSize:"10pt" } : { color: "gray", fontSize:"10pt" }}>
                                 {descriptionText}
                             </div> : null}
                         </div>
@@ -787,7 +810,7 @@ const ArrayType = ({ adamant_field_error, adamant_error_description, maxItems, m
                                                                     <DragHandleIcon fontSize="small" />
                                                                 </Tooltip>
                                                             </div>
-                                                            <ArrayItemRenderer arrayFieldKey={field_key} withinObject={withinObject} value={value} pathSchema={pathSchema} pathFormData={pathFormData} dataInputItems={dataInputItems} oDataInputItems={oDataInputItems} oSetDataInputItems={oSetDataInputItems} setDataInputItems={setDataInputItems} field_label={field_label} field_items={inputItems.length !== 0 ? inputItems[index] : field_items} edit={true} handleDeleteArrayItem={handleDeleteArrayItem} path={path} fieldIndex={index} fieldkey={inputItems[index]["field_key"]} type={inputItems[index]["type"]} />
+                                                            <ArrayItemRenderer arrayFieldKey={field_key} withinObject={withinObject} value={value} pathSchema={pathSchema} pathFormData={pathFormData} dataInputItems={dataInputItems} oDataInputItems={oDataInputItems} oSetDataInputItems={oSetDataInputItems} setDataInputItems={setDataInputItems} field_label={field_label} field_items={inputItems.length !== 0 ? inputItems[index] : field_items} edit={true} handleDeleteArrayItem={handleDeleteArrayItem} path={path} fieldIndex={index} fieldkey={inputItems[index]["field_key"]} type={inputItems[index]["type"]} isResource = {field_key === 'resource'? true : false} />
                                                         </div>
                                                     </div>
                                                 )}
@@ -795,9 +818,9 @@ const ArrayType = ({ adamant_field_error, adamant_error_description, maxItems, m
                                         );
                                     })}
                                     {provided.placeholder}
-                                    <div style={{ display: "flex", justifyContent: "right" }}>
+                                    {field_key !== "resource" ? <div style={{ display: "flex", justifyContent: "right" }}>
                                         <Button onClick={() => { handleAddArrayItem() }} style={{ fontSize: "12px", marginLeft: "5px", marginTop: "5px", height: "45px" }}><AddIcon style={{ paddingRight: "5px" }} fontSize="small" color="primary" /> Add Item</Button>
-                                    </div>
+                                    </div> : null}
                                 </div>
                             )}
                         </Droppable>

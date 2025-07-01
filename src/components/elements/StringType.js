@@ -10,6 +10,8 @@ import deleteKey from '../utils/deleteKey';
 import { Tooltip } from '@material-ui/core';
 import getValue from '../utils/getValue';
 import set from 'set-value';
+import { FileIcon, defaultStyles } from 'react-file-icon';
+import mimeTypesExt from '../../assets/mime-types-extensions-swapped.json'
 
 
 const useStyles = makeStyles((theme) => ({
@@ -328,6 +330,7 @@ const StringType = ({ adamant_field_error, adamant_error_description, minLength,
                             onFocus={() => { handleOnFocus() }}
                             error={inputError}
                             multiline
+                            disabled={["filetype", "fileName", "hash", "hashAlgorithm"].includes(field_key) ? true : false }
                             onKeyDown={(e) => {
                                 if (e.key === "Enter" && !(e.shiftKey)) {
                                     e.preventDefault();
@@ -335,6 +338,7 @@ const StringType = ({ adamant_field_error, adamant_error_description, minLength,
                                 }
                             }}
                             onBlur={(event) => handleOnBlur(event, pathFormData, "string")} required={required} helperText={descriptionText} onChange={(event) => { handleOnChange(event) }} value={fieldValue} fullWidth={true} className={classes.heading} id={field_key} label={field_label} variant="outlined" />
+                        {field_key === "filetype" && mimeTypesExt[fieldValue] !== undefined ? <div style={{ "width": "50px", "paddingLeft": "5px" }}><FileIcon extension={mimeTypesExt[fieldValue].substring(1)} {...defaultStyles[mimeTypesExt[fieldValue].substring(1)]} /></div> : null}
                         {edit ? <>
                             <Tooltip placement="top" title={`Edit field "${field_label}"`}>
                                 <IconButton onClick={() => setOpenDialog(true)} style={{ marginLeft: "5px", marginTop: "5px", height: "45px" }}>

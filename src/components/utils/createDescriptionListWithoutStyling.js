@@ -32,8 +32,9 @@ const createDescriptionListWithoutStyling = (data) => {
             //descList += "</dl>\n"
         } else {
             let pathArr = element["path"].split(".");
-            let titleDiv = `<dt></dt>\n`
-            titleDiv += `<dt>`
+            //let titleDiv = `<div></div>\n`
+            let titleDiv = `</dl>`
+            titleDiv += `<div>`
             pathArr.forEach((item, index) => {
                 if (element["pathURIs"] !== undefined & !element["pathURIs"].some(emptyString)) {
                     if (item !== "") {
@@ -60,7 +61,8 @@ const createDescriptionListWithoutStyling = (data) => {
                     }
                 }
             })
-            titleDiv += "</dt>\n"
+            titleDiv += "</div>\n"
+            titleDiv += "<dl>"
 
             descList += titleDiv
             //descList += "<dl>\n";

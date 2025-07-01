@@ -236,7 +236,7 @@ const ObjectType = ({ adamant_error_description, adamant_field_error, dataInputI
                     }
                 }}>
                 <AccordionSummary
-                    style={inputError ? { backgroundColor: "white", borderRadius: "4px", borderBottom: '1px solid  #ff7961', height: "auto" } : { backgroundColor: "rgba(232, 244, 253, 1)", borderBottom: '1px solid  rgba(0, 0, 0, .0)', height: "auto" }}
+                    style={inputError ? { backgroundColor: "white", borderRadius: "4px", borderBottom: '1px solid  #ff7961', height: `${expand ? "auto" : "10px"}` } : { backgroundColor: "rgba(232, 244, 253, 1)", borderBottom: '1px solid  rgba(0, 0, 0, .0)', height: `${expand ? "auto" : "10px"}` }}
                     expandIcon={
                         <Tooltip placement="top" title={`Collapse/Expand this container`}>
                             <ExpandMoreIcon />
@@ -249,8 +249,8 @@ const ObjectType = ({ adamant_error_description, adamant_field_error, dataInputI
                 >
                     <div style={{ paddingTop: "10px", paddingBottom: "10px", display: 'inline-flex', width: '100%' }}>
                         <div style={{ width: "100%" }}>
-                            <Typography style={inputError ? { color: "#ff7961" } : {}} className={classes.heading}>{field_label + (required ? "*" : "")}</Typography>
-                            {expand ? <div style={inputError ? { color: "#ff7961" } : { color: "gray" }}>
+                            <Typography style={inputError ? { color: "#ff7961", fontSize: "13pt", lineHeight: `${expand ? "" : "40px"}` } : { fontSize: "13pt", lineHeight: `${expand ? "" : "40px"}` }} className={classes.heading}>{field_label + (required ? "*" : "")}</Typography>
+                            {expand ? <div style={inputError ? { color: "#ff7961", fontSize: "10pt" } : { color: "gray", fontSize: "10pt" }}>
                                 {descriptionText}
                             </div> : null}
                         </div>
