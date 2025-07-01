@@ -2,9 +2,13 @@ import React from "react";
 import "./styles.css";
 import { Route, Switch, Redirect } from "react-router-dom";
 import AdamantMain from "./pages/AdamantMain";
+import AdamantRequest from "./pages/AdamantRequest";
+import AdamantProcess from "./pages/AdamantProcess";
 import "cors";
 import packageJson from "../package.json";
 import { ToastContainer } from "react-toastify";
+import AdamantBrowseExp from "./pages/AdamantBrowseExp";
+import AsyncTestPage from "./pages/AsyncTestPage"
 
 export default function App() {
 
@@ -21,10 +25,14 @@ export default function App() {
           <Switch>
             <Redirect exact from="/" to="/adamant" />
             <Route exact path="/adamant" component={AdamantMain}></Route>
+            <Route exact path="/adamant/request-job" component={AdamantRequest}></Route>
+            <Route exact path="/adamant/process-request" component={AdamantProcess}></Route>
+            <Route exact path="/adamant/browse-experiment" component={AdamantBrowseExp}></Route>
+            <Route exact path="/adamant/async-testpage" component={AsyncTestPage}></Route>
           </Switch>
         </div>
         <ToastContainer
-          position="top-right"
+          position="bottom-right"
           autoClose={5000}
           hideProgressBar={false}
           closeOnClick={true}
@@ -39,11 +47,15 @@ export default function App() {
         <div className="the_app">
           <Switch>
             <Route exact path="/" component={AdamantMain}></Route>
+            <Route exact path="/request-job" component={AdamantRequest}></Route>
+            <Route exact path="/process-request" component={AdamantProcess}></Route>
+            <Route exact path="/browse-experiment" component={AdamantBrowseExp}></Route>
+            <Route exact path="/async-testpage" component={AsyncTestPage}></Route>
           </Switch>
         </div>
         <ToastContainer
-          position="top-right"
-          autoClose={5000}
+          position="bottom-right"
+          autoClose={2000}
           hideProgressBar={false}
           closeOnClick={true}
           pauseOnHover={true}

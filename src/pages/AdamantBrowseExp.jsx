@@ -1,10 +1,11 @@
 import React, { useCallback, useState } from "react";
 //import { makeStyles } from "@material-ui/core/styles";
 import { useDropzone } from "react-dropzone";
+import { Route } from "react-router-dom";
 //import QPTDATLogo from "../assets/header-image.png";
 import FormRenderer from "../components/FormRenderer";
 import Button from "@material-ui/core/Button";
-import { TextField } from "@material-ui/core";
+import { IconButton, TextField } from "@material-ui/core";
 import Divider from "@material-ui/core/Divider";
 import { FormContext } from "../FormContext";
 import array2object from "../components/utils/array2object";
@@ -34,25 +35,22 @@ import changeKeywords from "../components/utils/changeKeywords";
 //import QPTDATLogo from "../assets/adamant-header-5.svg";
 import QPTDATLogo from "../assets/adamant-header-5.svg";
 import createDescriptionListFromJSON from "../components/utils/createDescriptionListFromJSON";
+import HelpIcon from "@material-ui/icons/HelpOutlineRounded";
+import { Tooltip } from "@material-ui/core";
 import validateSchemaAgainstSpecification from "../components/utils/validateSchemaAgainstSpecification";
 import { Autocomplete } from "@mui/material";
+import getPaths from "../components/utils/getPaths";
 import checkIDexistence from "../components/utils/checkIDexistence";
 
 import ChooseUseCasesDialog from "../components/ChooseUseCasesDialog";
 import LDAPLoginDialog from "../components/LDAPLoginDialog";
-import DatasetSubmissionDialog from "../components/DatasetSubmissionDialog";
+import RenderExperimentCard from "../components/RenderExperimentCard";
 
-import AdamantVersion from "../assets/adamant_version.json";
+import EditExperiment from "../components/EditExperiment";
+import fillForm from "../components/utils/fillForm";
+
+import AdamantVersion from "../assets/adamant_version.json"
 import GeneralConfig from "../general-conf.json"
-
-// to create a bundle (download dataset+metadata as .zip)
-import JSZip from "jszip";
-import { saveAs } from "file-saver";
-import FilesDialog from "../components/FilesDialog"
-
-import ProgressDialog from "../components/ProgressDialog";
-
-
 
 // function that receive the schema and convert it to Form/json data blueprint
 // also to already put the default value to this blueprint
@@ -101,7 +99,7 @@ const removeEmpty = (obj) => {
   return Object.keys(obj).length > 0 || obj instanceof Array ? obj : undefined;
 };
 
-const AdamantMain = () => {
+const AdamantBrowseExp = () => {
   // state management
   const [disable, setDisable] = useState(true);
   const [schemaMessage, setSchemaMessage] = useState(null);
@@ -133,8 +131,6 @@ const AdamantMain = () => {
   const [HeaderImage, setHeaderImage] = useState(QPTDATLogo);
   const [openFormReviewDialog, setOpenFormReviewDialog] = useState(false);
   const [openJobRequestDialog, setOpenJobRequestDialog] = useState(false);
-  const [openDatasetSubmissionDialog, setOpenDatasetSubmissionDialog] =
-    useState(false);
   const [jobRequestSchemas, setJobRequestSchemas] = useState([]);
   const [submitTextList, setSubmitTextList] = useState([]);
   const [submitText, setSubmitText] = useState("Submit Job Request");
@@ -166,20 +162,16 @@ const AdamantMain = () => {
   const [openFilesDialog, setOpenFilesDialog] = useState(false);
   const [filesDialogContent, setFilesDialogContent] = useState(["", "", ""]);
 
-  // ProgressDialog
-  const [openProgressDialog, setOpenProgressDialog] = useState(false);
-  const [progressDialogMessages, setProgressDialogMessages] = useState([
-    "",
-    "",
-  ]);
-  const [progress, setProgress] = useState(0);
-  const [progressDialogTitle, setProgressDialogTitle] = useState("");
+  // experiments from eLabFTW
+  const [experiments, setExperiments] = useState([]);
+  const [experimentData, setExperimentData] = useState({});
 
-  // blockchain
-  const [hashes, setHashes] = useState({});
+  const [retrievedJSONSchema, setRetrievedJSONSchema] = useState();
+  const [retrievedJSONData, setRetrievedJSONData] = useState();
+
+  const [toggleJSONForm, setToggleJSONForm] = useState(true);
 
   //-------------------------- useEffects to save states between reloads ----------------------------
-
   useEffect(() => {
     setFirstName(
       window.sessionStorage.getItem("firstName") === null
@@ -353,6 +345,10 @@ const AdamantMain = () => {
           });
         } else {
           console.log("Login sucessful!");
+          //let arr = [];
+          //for (let i = 0; i < status.length; i++) {
+          //  arr.push(status[i]["tag"]);
+          //}
           setRetrievedTags(status);
           toast.success(`Successfully logged in!`, {
             toastId: "loginSuccess",
@@ -377,11 +373,21 @@ const AdamantMain = () => {
     setToken("");
     setFirstName("");
     setEmail("");
+    setExperiments([]);
+    setExperimentData({});
 
     window.sessionStorage.setItem("firstName", "");
     window.sessionStorage.setItem("token", "");
     window.sessionStorage.setItem("loginState", "false");
     window.sessionStorage.setItem("email", "");
+  };
+
+  const handleBack2Browse = () => {
+    setExperimentData({});
+    setSchema(undefined);
+    setRetrievedJSONData(undefined);
+    setRetrievedJSONSchema(undefined);
+    setToggleJSONForm(true)
   };
 
   // handle select schema on change
@@ -438,7 +444,7 @@ const AdamantMain = () => {
           //let SEMlogo = require("../assets/sem-header-picture.png");
           //setHeaderImage(SEMlogo["default"]);
           setHeaderImage(QPTDATLogo);
-          setEditMode(false);
+          setEditMode(true);
           setSubmitText(
             submitTextList[jobRequestSchemas.indexOf(convertedSchema["title"])]
           );
@@ -465,100 +471,52 @@ const AdamantMain = () => {
   };
 
   // function to check if the file accepted is of json format and json schema valid
-  const checkSchemaValidity = (schemaFile) => {
+  const checkSchemaValidity = (schemaFile, initialData) => {
+    console.log("schema:", schemaFile);
     // place holder
-    if (schemaFile[0]["type"] === "application/json") {
-      // read the file with FileReadr API
-      const reader = new FileReader();
-      reader.onabort = () => console.log("file reading was aborted");
-      reader.onerror = () => console.log("file reading has failed");
-      reader.onload = () => {
-        const binaryStr = reader.result;
-        const obj = JSON.parse(binaryStr);
+    let convertedSchema = JSON.parse(JSON.stringify(schemaFile));
+    try {
+      convertedSchema["properties"] = object2array(schemaFile["properties"]);
 
-        // convert obj schema to iterable array properties
-        let convertedSchema = JSON.parse(JSON.stringify(obj));
+      // update states
+      setSchemaValidity(true);
+      setSchema(schemaFile);
+      let oriSchema = JSON.parse(JSON.stringify(schemaFile));
+      setOriginalSchema(oriSchema);
+      setSchemaWithValues(JSON.parse(JSON.stringify(oriSchema)));
+      fillForm(convertedSchema["properties"], initialData);
+      setConvertedSchema(convertedSchema);
+
+      if (jobRequestSchemas.includes(schemaFile["title"])) {
         try {
-          convertedSchema["properties"] = object2array(obj["properties"]);
-
-          // update states
-          setSchemaValidity(true);
-          setSchemaMessage(`${schemaFile[0]["name"]} is a valid schema`);
-          setSchema(obj);
-          let oriSchema = JSON.parse(JSON.stringify(obj));
-          setOriginalSchema(oriSchema);
-          setSchemaWithValues(JSON.parse(JSON.stringify(oriSchema)));
-          setConvertedSchema(convertedSchema);
-
-          if (jobRequestSchemas.includes(obj["title"])) {
-            try {
-              //let SEMlogo = require("../assets/sem-header-picture.png");
-              //setHeaderImage(SEMlogo["default"]);
-              setHeaderImage(QPTDATLogo);
-              setEditMode(true);
-              setSubmitText(
-                submitTextList[
-                  jobRequestSchemas.findIndex(convertedSchema["title"])
-                ]
-              );
-            } catch (error) {
-              console.log(error);
-              setHeaderImage(QPTDATLogo);
-              setEditMode(false);
-            }
-          } else {
-            setHeaderImage(QPTDATLogo);
-            setEditMode(false);
-          }
-
-          // create form data
-          let formData = createFormDataBlueprint(obj["properties"]);
-          setJsonData(formData);
+          //let SEMlogo = require("../assets/sem-header-picture.png");
+          //setHeaderImage(SEMlogo["default"]);
+          setHeaderImage(QPTDATLogo);
+          setEditMode(true);
+          setSubmitText(
+            submitTextList[
+              jobRequestSchemas.findIndex(convertedSchema["title"])
+            ]
+          );
         } catch (error) {
           console.log(error);
-          // update states
-          setSchemaValidity(false);
-          setSchemaMessage(`${schemaFile[0]["name"]} is invalid`);
-          setSchema(null);
+          setHeaderImage(QPTDATLogo);
+          setEditMode(false);
         }
-      };
-      reader.readAsText(schemaFile[0]);
-    } else {
+      } else {
+        setHeaderImage(QPTDATLogo);
+        setEditMode(false);
+      }
+
+      // create form data
+      let formData = createFormDataBlueprint(schemaFile["properties"]);
+      setJsonData(formData);
+    } catch (error) {
+      console.log(error);
       // update states
       setSchemaValidity(false);
-      setSchemaMessage(`${schemaFile[0]["name"]} is of incorrect file type`);
       setSchema(null);
     }
-  };
-
-  // browse or drag&drop schema file
-  const onDrop = useCallback(
-    (acceptedFile) => {
-      // process the schema, validation etc
-      checkSchemaValidity(acceptedFile);
-
-      // store schema file in the state
-      // update states
-      setRenderReady(false);
-      setDisable(true);
-      setCreateScratchMode(false);
-      setJsonData({});
-      setSelectedSchemaName("");
-    },
-    [setRenderReady, jobRequestSchemas, submitTextList]
-  );
-  //
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    multiple: false,
-  });
-
-  // render on-click handle
-  const renderOnClick = () => {
-    //setFormRenderInProgress(true);
-    setDisable(false);
-    setRenderReady(true);
   };
 
   // clear schema on-click handle
@@ -626,7 +584,6 @@ const AdamantMain = () => {
 
     setDisable(false);
     setRenderReady(true);
-    setEditMode(true);
   };
 
   // compile on-click handle
@@ -933,7 +890,7 @@ const AdamantMain = () => {
     handleClose();
   };
 
-  // handle download json schema
+  // handle download description list
   const handleDownloadDescriptionList = () => {
     //let content = { ...jsonData };
     let convSchemaData = { ...convertedSchema };
@@ -997,7 +954,7 @@ const AdamantMain = () => {
     }
     // create description list
     let footnote = `<div> This template was generated with <span><a title=https://github.com/csihda/adamant href=https://github.com/csihda/adamant>${AdamantVersion["adamant_version"]}</a></span> </div>`;
-    let descList = `<div><span><a title=https://github.com/csihda/adamant href=${eLabURL}$/browse-experiment>Edit experiment on Adamant</a></span> </div>`;
+    let descList = ``;
     descList += createDescriptionListFromJSON(
       cleaned,
       convSch,
@@ -1019,6 +976,43 @@ const AdamantMain = () => {
     a.click();
 
     handleClose();
+  };
+
+  // handle download description list
+  const handlePrepareDescList = () => {
+    //let content = { ...jsonData };
+    let convSchemaData = { ...convertedSchema };
+    let content = convData2FormData(
+      JSON.parse(JSON.stringify(convSchemaData["properties"]))
+    );
+    let contentSchema = { ...schema };
+
+    // get rid of empty values in content
+    content = removeEmpty(content);
+    if (content === undefined) {
+      content = {};
+    }
+
+    // Create elab ftw description list and store it to the description list state
+    let convSch = { ...convertedSchema };
+    // use this if we want to show all fields in description list
+    let convProp = JSON.parse(JSON.stringify(convSch["properties"]));
+    fillValueWithEmptyString(convProp);
+    let cleaned = prepareDataForDescList(convProp); // skip keyword that has value of array with objects as its elements
+    // create description list
+    let footnote = `<div> This template was generated with <span><a title=https://github.com/csihda/adamant href=https://github.com/csihda/adamant>${AdamantVersion["adamant_version"]}</a></span> </div>`;
+    let descList = ``;
+    descList += createDescriptionListFromJSON(
+      cleaned,
+      convSch,
+      convProp,
+      schema,
+      footnote,
+      true
+    ); // false means without styling
+
+    setDescriptionList(descList);
+    setToggleJSONForm(false);
   };
 
   // get available tags from elabftw
@@ -1048,6 +1042,159 @@ const AdamantMain = () => {
         console.log(status);
         toast.error(`Failed to get the tags!\nMaybe wrong url or token?`, {
           toastId: "fetchingTagsError",
+        });
+      },
+    });
+  };
+
+  // get available tags from elabftw
+  const getExperimentsELabFTW = () => {
+    var $ = require("jquery");
+    $.ajax({
+      type: "POST",
+      url: "/api/get_experiments",
+      dataType: "json",
+      data: {
+        eLabURL: eLabURL,
+        eLabToken: token,
+      },
+      success: function (status) {
+        console.log("Experiments retrieved successfully");
+        //let arr = [];
+        //for (let i = 0; i < status.length; i++) {
+        //  arr.push(status[i]["tag"]);
+        //}
+        setExperiments(status);
+        /*
+        toast.success(`Successfully retrieved the experiments!`, {
+          toastId: "fetchingExperimentsSuccess",
+        });*/
+      },
+      error: function (status) {
+        console.log("Failed to retrieve experiments");
+        console.log(status);
+        toast.error(`Failed to get the experiments!\n Not sure why...`, {
+          toastId: "fetchingExperimentsError",
+        });
+      },
+    });
+  };
+
+  // get available tags from elabftw
+  const readExperimentELabFTW = (experimentID) => {
+    var $ = require("jquery");
+    $.ajax({
+      type: "POST",
+      url: "/api/read_experiment",
+      dataType: "json",
+      data: {
+        eLabURL: eLabURL,
+        eLabToken: token,
+        experiment_id: experimentID,
+      },
+      success: function (status) {
+        console.log("Experiment read successfully");
+        //let arr = [];
+        //for (let i = 0; i < status.length; i++) {
+        //  arr.push(status[i]["tag"]);
+        //}
+        if (status["status"] === 200) {
+          setExperimentData(status);
+          console.log(status);
+          setRetrievedJSONData(status["json_data"]);
+          setRetrievedJSONSchema(status["json_schema"]);
+
+          checkSchemaValidity(status["json_schema"], status["json_data"]);
+          /*
+          toast.success(`Successfully read the experiment!`, {
+            toastId: "readingExperimentSuccess",
+          });*/
+        } else {
+          console.log("Failed to read the experiment");
+          console.log(status);
+          toast.error(
+            `Failed to get the experiments!\n No JSON files were found.`,
+            {
+              toastId: "readingExperimentError",
+            }
+          );
+        }
+      },
+      error: function (status) {
+        console.log("Failed to read the experiment");
+        console.log(status);
+        toast.error(`Failed to get the experiments!\n Not sure why...`, {
+          toastId: "readingExperimentError",
+        });
+      },
+    });
+  };
+
+  // get available tags from elabftw
+  const updateExperimentELabFTW = (experimentID) => {
+    // json schema is schema
+    console.log("uploading schema:", schema);
+    // -------------------------------------------------------------------------------------------------------
+
+    // json data
+    let convSchemaData = { ...convertedSchema };
+    let json_data = convData2FormData(
+      JSON.parse(JSON.stringify(convSchemaData["properties"]))
+    );
+    // get rid of empty values in json_data
+    json_data = removeEmpty(json_data);
+    if (json_data === undefined) {
+      json_data = {};
+    }
+    console.log("uploading json_data", json_data);
+    // -------------------------------------------------------------------------------------------------------
+
+    // Create elab ftw description list and store it to the description list state
+    let convSch = { ...convertedSchema };
+    // use this if we want to show all fields in description list
+    let convProp = JSON.parse(JSON.stringify(convSch["properties"]));
+    fillValueWithEmptyString(convProp);
+    let cleaned = prepareDataForDescList(convProp); // skip keyword that has value of array with objects as its elements
+    //let cleaned = removeEmpty(prepareDataForDescList(convSch["properties"]));
+    // create description list
+    let footnote = `<div> This template was generated with <span><a title=https://github.com/csihda/adamant href=https://github.com/csihda/adamant>${AdamantVersion["adamant_version"]}</a></span> </div>`;
+    let descList = ``;
+    descList += createDescriptionListFromJSON(
+      cleaned,
+      convSch,
+      convProp,
+      schema,
+      footnote,
+      true
+    ); // false means without styling
+    console.log("uploading description list:", descList);
+    // -------------------------------------------------------------------------------------------------------
+
+    var $ = require("jquery");
+    $.ajax({
+      type: "POST",
+      url: "/api/update_experiment",
+      dataType: "json",
+      data: {
+        eLabURL: eLabURL,
+        eLabToken: token,
+        experiment_id: experimentID,
+        desc_list: descList,
+        new_schema: JSON.stringify(schema),
+        new_data: JSON.stringify(json_data),
+      },
+      success: function (status) {
+        console.log("Experiment updated successfully");
+        toast.success(`Updated.`, {
+          toastId: "updateSuccess",
+          autoClose: 1000,
+        });
+      },
+      error: function (status) {
+        console.log("Failed to update the experiment.");
+        toast.error(`Failed to update the experiment.`, {
+          toastId: "updateFailed",
+          autoClose: 1000,
         });
       },
     });
@@ -1155,7 +1302,7 @@ const AdamantMain = () => {
         );
 
         // clear states
-        // setToken("");
+        //setToken("");
         setExperimentTitle("");
         setRetrievedTags([]);
         setTags([]);
@@ -1241,195 +1388,6 @@ const AdamantMain = () => {
     });
   };
 
-  // submit dataset to INPTDAT
-  const submitDataset = () => {
-    // TO DO
-    alert("to do");
-  };
-
-  // download bundled dataset as .zip
-  const handleCreateBundle = () => {
-    //let content = { ...jsonData };
-    let convSchemaData = { ...convertedSchema };
-
-    let content = convData2FormData(
-      JSON.parse(JSON.stringify(convSchemaData["properties"]))
-    );
-    let contentSchema = { ...schema };
-
-    // get rid of empty values in content
-    content = removeEmpty(content);
-    if (content === undefined) {
-      content = {};
-    }
-
-    // Zipping process
-    const zip = new JSZip();
-    // Zip the metadata
-    zip.file("metadata.json", JSON.stringify(content));
-    zip.file("schema.json", JSON.stringify(contentSchema));
-
-    const fileDir = zip.folder("resources");
-    //img.file("smile.gif", AdamantLogo, { base64: true });
-
-    // read loaded files
-    if (loadedFiles.length > 0) {
-      setOpenFilesDialog(true);
-      setFilesDialogContent([
-        "Zipping the files...",
-        "The files are being zipped / bundled. Please wait.",
-        "",
-      ]);
-      for (let i = 0; i < loadedFiles.length; i++) {
-        fileDir.file(loadedFiles[i]["name"], loadedFiles[i], { binary: true });
-      }
-    }
-
-    zip.generateAsync({ type: "blob" }).then(function (content) {
-      // see FileSaver.js
-      setOpenFilesDialog(false);
-      setFilesDialogContent(["", "", ""]);
-      saveAs(content, "dataset.zip");
-    });
-  };
-
-  // --------------------------------------- Dataset certification feature ------------------------------------
-  const readAndHash = (file) => {
-    return new Promise((resolve) => {
-      let reader = new FileReader();
-      // hash the file
-      reader.onloadend = function () {
-        let file_result = this.result;
-        let file_wordArr = CryptoJS.lib.WordArray.create(file_result);
-        let sha256_hash = CryptoJS.SHA256(file_wordArr);
-        // console.log(`finished hashing "${file["name"]}"`);
-        resolve([file["name"], sha256_hash.toString()]);
-      };
-      reader.readAsArrayBuffer(file);
-    });
-  };
-
-  const certifyOnBloxberg = (hashes, metadata) => {
-    let crid = [];
-    let file_names = [];
-
-    for (const [key, value] of Object.entries(hashes)) {
-      file_names.push(key);
-      crid.push(value);
-    }
-
-    // console.log("crid:", crid);
-    // console.log("file names:", file_names);
-
-    var $ = require("jquery");
-    return $.ajax({
-      type: "POST",
-      url: "/api/certify",
-      async: true,
-      dataType: "json",
-      data: {
-        crid: JSON.stringify(crid),
-        metadata: JSON.stringify(metadata),
-        file_names: JSON.stringify(file_names),
-        hashes_dict: JSON.stringify(hashes),
-      },
-      success: function (status) {
-        //console.log(status);
-        console.log("Certification succeeded");
-      },
-      error: function (status) {
-        console.log("Certification failed");
-      },
-    });
-  };
-
-  async function handleOnlyCertify() {
-    // Prepare metadata
-    let convSchemaData = { ...convertedSchema };
-    let content = convData2FormData(
-      JSON.parse(JSON.stringify(convSchemaData["properties"]))
-    );
-    //// get rid of empty values in content
-    content = removeEmpty(content);
-    if (content === undefined) {
-      content = {};
-    }
-
-    // Prepare schema
-    let contentSchema = { ...schema };
-
-    setOpenProgressDialog(true);
-    setProgressDialogTitle("Processing...");
-    setProgressDialogMessages("Starting...");
-    setProgress(0);
-    let hashDict = {};
-    const increment = 100 / (loadedFiles.length + 1 + 1 + 1 + 1); // num of files plus one certification process plus one zipping process
-                                                                 // plus one metadata plus one schema
-    // find the index of resource key
-    let resourceKeyIndex = 0;
-    for (let i = 0; i < convSchemaData["properties"].length; i++) {
-      if (convSchemaData["properties"][i]["fieldKey"] === "resource") {
-        resourceKeyIndex = i;
-      }
-    }
-
-    // hashing: to do: change the order of the hashing, hash the files first and add the hash into the json data, then hash the json data
-    for (let i = 0; i < loadedFiles.length + 2; i++) {
-      if (i < loadedFiles.length) {
-        setProgressDialogMessages(`Hashing "${loadedFiles[i]["name"]}"...`);
-        const result = await readAndHash(loadedFiles[i]);
-        setProgress((i + 1) * increment);
-        hashDict[result[0]] = result[1];
-        content["resource"]["hash"] = result[1];
-        content["resource"]["hashAlgorithm"] = "SHA-256";
-        convSchemaData["properties"][resourceKeyIndex]["value"][i]["hash"] = result[1];
-        convSchemaData["properties"][resourceKeyIndex]["value"][i]["hashAlgorithm"] = "SHA-256";
-      } else if (i === loadedFiles.length) {
-        setProgressDialogMessages(`Hashing "metadata.json"...`);
-        let content_hash = CryptoJS.SHA256(JSON.stringify(content));
-        setProgress((i + 1) * increment);
-        hashDict["metadata.json"] = content_hash.toString();
-      } else if (i === loadedFiles.length + 1) {
-        setProgressDialogMessages(`Hashing "schema.json"...`);
-        let content_hash = CryptoJS.SHA256(JSON.stringify(contentSchema));
-        setProgress((i + 1) * increment);
-        hashDict["schema.json"] = content_hash.toString();
-      }
-    }
-    setProgressDialogMessages(`Finished hashing all files.`);
-    //console.log("finished:", hashDict);
-    setHashes(hashDict);
-    // certifying
-    setProgressDialogMessages(`Certifying all files...`);
-    const result = await certifyOnBloxberg(hashDict, {});
-    //console.log("result:", result);
-    setProgress((loadedFiles.length + 3) * increment);
-
-    // zip the results together
-    if (result["status_code"] === 200) {
-      setProgressDialogMessages(`Zipping certificates...`);
-      const zip = new JSZip();
-      for (const [file_name, content] of Object.entries(result["data"])) {
-        zip.file(file_name, content, { base64: true });
-      }
-
-      zip.generateAsync({ type: "blob" }).then(function (content) {
-        saveAs(content, "certificates.zip");
-      });
-      setProgress(100);
-      setProgressDialogTitle("Process complete");
-      setProgressDialogMessages(`Finished everything.`);
-      setOpenProgressDialog(false);
-      //setConvertedSchema(convSchemaData);
-      updateParent(convSchemaData);
-    } else {
-      setProgress(0);
-      setProgressDialogTitle("ERROR");
-      setProgressDialogMessages(`ERROR`);
-    }
-  }
-  // -------------------------------------------------------------------------------------------------------
-
   const handleOnClickProceedButton = () => {
     // Create elab ftw description list and store it to the description list state
     let convSch = { ...convertedSchema };
@@ -1456,7 +1414,7 @@ const AdamantMain = () => {
     }
     // create description list
     let footnote = `<div> This template was generated with <span><a title=https://github.com/csihda/adamant href=https://github.com/csihda/adamant>${AdamantVersion["adamant_version"]}</a></span> </div>`;
-    let descList = `<div><span><a title=https://github.com/csihda/adamant href=${eLabURL}$/browse-experiment>Edit experiment on Adamant</a></span> </div>`;
+    let descList = ``;
     descList += createDescriptionListFromJSON(
       cleaned,
       convSch,
@@ -1464,7 +1422,7 @@ const AdamantMain = () => {
       schema,
       footnote,
       true
-    ); // false means without styling
+    );
 
     setDescriptionList(descList);
 
@@ -1518,33 +1476,15 @@ const AdamantMain = () => {
   };
 
   // gather all loaded files in one object
-  const handleLoadedFiles = (file, value) => {
+  const handleLoadedFiles = (file) => {
     let files = loadedFiles;
     //console.log(files);
 
     // check if file already exists
     let isFileAlreadyExist = false;
     for (let i = 0; i < files.length; i++) {
-      if (files[i] !== undefined) {
-        if (files[i]["name"] === file["name"]) {
-          isFileAlreadyExist = true;
-        }
-      }
-    }
-
-    // check if file metadata already exists in value
-    let isFileMetadataAlreadyExist = false;
-    let whichIndex = 0;
-    if (value !== undefined) {
-      if (value.length !== 0) {
-        for (let i = 0; i < value.length; i++) {
-          if (typeof value[i] === "object") {
-            if (Object.values(value[i]).includes(file["name"])) {
-              isFileMetadataAlreadyExist = true;
-              whichIndex = i;
-            }
-          }
-        }
+      if (files[i]["name"] === file["name"]) {
+        isFileAlreadyExist = true;
       }
     }
 
@@ -1562,13 +1502,6 @@ const AdamantMain = () => {
       );
       //console.log("loaded files:", files);
       return true;
-    } else if (!isFileAlreadyExist && isFileMetadataAlreadyExist) {
-      console.log(
-        "File not exist yet but the metadata exists. Replace the undefined element in loadedFiles with this current file."
-      );
-      files[whichIndex] = file;
-      setLoadedFiles(files);
-      console.log("loaded files:", files);
     } else {
       console.log("File not exist yet. Pushing it.");
       files.push(file);
@@ -1607,7 +1540,6 @@ const AdamantMain = () => {
       <FormContext.Provider
         value={{
           loadedFiles,
-          setLoadedFiles,
           handleRemoveFile,
           handleLoadedFiles,
           updateParent,
@@ -1621,7 +1553,6 @@ const AdamantMain = () => {
           setSEMSelectedDevice,
           implementedFieldTypes,
           handleCheckIDexistence,
-          openDatasetSubmissionDialog,
         }}
       >
         <div style={{ paddingBottom: "5px" }}>
@@ -1650,13 +1581,17 @@ const AdamantMain = () => {
                 verticalAlign: "top",
               }}
             >
-              <Button
-                onClick={() => {
-                  window.location.reload();
-                }}
-              >
-                Home
-              </Button>
+              <Route
+                render={({ history }) => (
+                  <Button
+                    onClick={() => {
+                      history.push("/");
+                    }}
+                  >
+                    Home
+                  </Button>
+                )}
+              />
               <div style={{ borderRight: "1px solid #D3D3D3" }}></div>
               {loginState === "false" ? (
                 <Button
@@ -1684,7 +1619,12 @@ const AdamantMain = () => {
               )}
             </div>
           </div>
-          {!inputMode ? (
+        </div>
+        {Object.keys(experimentData).length === 0 ? (
+          <>
+            <div style={{ fontSize: "20px", padding: "10px 10px 0px 10px" }}>
+              Make sure you are <strong>logged in</strong>!
+            </div>
             <div
               style={{
                 display: "flex",
@@ -1692,265 +1632,150 @@ const AdamantMain = () => {
                 padding: "10px 10px 0px 10px",
               }}
             >
-              <form autoComplete="off"
-                style={{
-                  display: "flex",
-                  width: "100%"
-                }}>
-              <Autocomplete
-                disablePortal
-                value={selectedSchemaName}
-                onChange={(event, newValue) =>
-                  handleSelectSchemaOnChange(newValue)
-                }
-                id="select-available-schema"
-                options={schemaNameList}
-                style={{ width: "120%" }}
-                renderInput={(params) => (
-                  <TextField
-                    variant="outlined"
-                    {...params}
-                    label="Select existing schema"
-                  />
-                )}
-              />
-              </form>
-              {/* <TextField
-                onChange={(event) => handleSelectSchemaOnChange(event)}
-                style={{ width: "100%" }}
-                fullWidth={false}
-                value={selectedSchemaName}
-                select
-                id={"select-schema"}
-                label={"Select existing schema"}
-                variant="outlined"
-                SelectProps={{ native: true }}
-              >
-                {schemaNameList.map((content, index) => (
-                  <option key={index} value={content}>
-                    {content}
-                  </option>
-                ))}
-              </TextField>
-              */}
-              <div
-                style={{
-                  paddingLeft: "10px",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                OR
-              </div>
               <Button
-                style={{ width: "100%", marginLeft: "10px" }}
-                variant="contained"
-                color="primary"
-                {...getRootProps()}
-              >
-                <input {...getInputProps()} />
-                {isDragActive ? "Drop here" : "Browse Schema"}
-              </Button>
-              <div
                 style={{
-                  paddingLeft: "10px",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                OR
-              </div>
-              <Button
-                onClick={() => createSchemaFromScratch()}
-                style={{
-                  width: "100%",
-                  marginLeft: "10px",
-                  marginRight: "10px",
+                  fontSize: "auto",
+                  height: "50px",
+                  width: "auto",
+                  marginRight: "5px",
                 }}
                 variant="contained"
                 color="primary"
+                disabled={loginState === "false" ? true : false}
+                onClick={() => getExperimentsELabFTW()}
               >
-                CREATE FROM SCRATCH
+                Browse experiments
               </Button>
-              <div
-                style={{
-                  paddingLeft: "10px",
-                  width: "100%",
-                  display: "flex",
-                  justifyContent: "right",
-                  alignItems: "center",
-                }}
-              >
-                {/* <Tooltip
-                  placement="top"
-                  title="Wondering how to use this tool?"
-                >
-                  <Button
-                    onClick={() => {
-                      window.open(
-                        "https://github.com/csihda/adamant",
-                        "_blank" // <- This is what makes it open in a new window.
-                      );
-                    }}
-                  >
-                    <HelpIcon />
-                  </Button>
-                  </Tooltip>*/}
-              </div>
-            </div>
-          ) : null}
+            </div>{" "}
+          </>
+        ) : null}
+        <div style={{ padding: "10px" }}>
+          <Divider />
         </div>
-        {!inputMode ? (
+
+        {Object.keys(experimentData).length === 0 ? (
+          <RenderExperimentCard
+            experiments={experiments}
+            readExperimentELabFTW={readExperimentELabFTW}
+          />
+        ) : /*
+          <EditExperiment
+            retrievedJSONSchema ={retrievedJSONSchema}
+            retrievedJSONData = {retrievedJSONData}
+            experimentData={experimentData}
+        />*/
+        convertedSchema !== null ? (
+          <>
+            <div
+              style={{
+                paddingLeft: "10px",
+                marginTop: "-8px",
+                display: "flex",
+                width: "100%",
+              }}
+            >
+              <Button
+                color={toggleJSONForm ? "default" : "default"}
+                onClick={() => setToggleJSONForm(true)}
+                variant={!toggleJSONForm ? "contained" : "default"}
+              >
+                JSON FORM
+              </Button>
+              {/*<div style={{ borderRight: "1px solid #D3D3D3" }}></div>*/}
+              <Button
+                color={!toggleJSONForm ? "default" : "default"}
+                onClick={() => handlePrepareDescList()}
+                variant={toggleJSONForm ? "contained" : "default"}
+              >
+                HTML FORM
+              </Button>
+            </div>
+            {toggleJSONForm ? (
+              <FormRenderer
+                revertAllChanges={revertAllChanges}
+                schema={convertedSchema}
+                setSchemaSpecification={setSchemaSpecification}
+                originalSchema={schema}
+                edit={editMode}
+                setEditMode={setEditMode}
+              />
+            ) : (
+              <div
+                style={{ padding: "10px" }}
+                dangerouslySetInnerHTML={{ __html: descriptionList }}
+              ></div>
+            )}
+          </>
+        ) : null}
+        <div style={{ padding: "10px" }}>
+          <Divider />
+        </div>
+        {Object.keys(experimentData).length !== 0 ? (
           <div
             style={{
-              paddingLeft: "10px",
-              display: "flex",
               width: "100%",
-              textAlign: "left",
+              display: "flex",
+              padding: "10px 10px",
             }}
           >
-            {schemaValidity === true ? (
-              <>
-                <div
-                  style={{
-                    paddingRight: "10px",
-                    display: "flex",
-                    justifyContent: "left",
-                    alignItems: "center",
-                    color: "green",
-                  }}
-                >
-                  {schemaMessage}. You can now render the form.
-                </div>
-                <Button
-                  style={{ marginRight: "5px" }}
-                  onClick={() => renderOnClick()}
-                  variant="outlined"
-                >
-                  Render
-                </Button>
-                <Button
-                  style={{ marginRight: "10px" }}
-                  onClick={() => clearSchemaOnClick()}
-                  variant="outlined"
-                  color="secondary"
-                >
-                  Clear
-                </Button>
-              </>
-            ) : (
-              <>
-                <div
-                  style={{
-                    paddingRight: "10px",
-                    paddingTop: "10px",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    color: "red",
-                  }}
-                >
-                  {schemaMessage}
-                </div>
-              </>
-            )}
-            {createScratchMode === true ? (
-              <>
-                <div
-                  style={{
-                    paddingRight: "10px",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    color: "green",
-                  }}
-                >
-                  Create from scratch mode. You can now start editing.
-                </div>
-                <Button
-                  onClick={() => clearSchemaOnClick()}
-                  variant="outlined"
-                  color="secondary"
-                >
-                  Clear
-                </Button>
-              </>
-            ) : null}
+            <div style={{ width: "50%" }}>
+              <Button
+                onClick={() => handleBack2Browse()}
+                style={{ float: "left", marginRight: "5px" }}
+                variant="outlined"
+              >
+                Back to Browse
+              </Button>
+            </div>
+            <div style={{ width: "50%" }}>
+              <Button
+                style={{ float: "right", marginRight: "5px" }}
+                variant="contained"
+                color="primary"
+                onClick={() =>
+                  updateExperimentELabFTW(experimentData["experiment_id"])
+                }
+              >
+                Update Experiment
+              </Button>
+              <Button
+                style={{ float: "right", marginRight: "5px" }}
+                id="demo-positioned-button"
+                aria-controls={open ? "demo-positioned-menu" : undefined}
+                aria-haspopup="true"
+                aria-expanded={open ? "true" : undefined}
+                onClick={handleClick}
+              >
+                <DownloadIcon /> Download Schema/Data
+              </Button>
+              <Menu
+                id="demo-positioned-menu"
+                aria-labelledby="demo-positioned-button"
+                anchorEl={anchorEl}
+                open={open}
+                onClose={handleClose}
+                anchorOrigin={{
+                  vertical: "top",
+                  horizontal: "left",
+                }}
+                transformOrigin={{
+                  vertical: "top",
+                  horizontal: "left",
+                }}
+              >
+                <MenuItem onClick={handleDownloadJsonSchema}>
+                  Download JSON Schema
+                </MenuItem>
+                <MenuItem onClick={handleDownloadFormData}>
+                  Download JSON Data
+                </MenuItem>
+                <MenuItem onClick={handleDownloadDescriptionList}>
+                  Download Description List
+                </MenuItem>
+              </Menu>
+            </div>
           </div>
         ) : null}
-        <div style={{ padding: "10px" }}>
-          <Divider />
-        </div>
-        {renderReady === true ? (
-          <FormRenderer
-            revertAllChanges={revertAllChanges}
-            schema={convertedSchema}
-            setSchemaSpecification={setSchemaSpecification}
-            originalSchema={schema}
-            edit={editMode}
-            setEditMode={setEditMode}
-          />
-        ) : null}
-        <div style={{ padding: "10px" }}>
-          <Divider />
-        </div>
-        <div
-          style={{
-            padding: "10px 10px",
-            display: "flex",
-            justifyContent: "right",
-          }}
-        >
-          <div style={{ width: "100%", display: "inline-block" }}>
-            <Button
-              onClick={() => handleOnClickProceedButton()}
-              style={{ float: "right" }}
-              variant="contained"
-              color="primary"
-              disabled={!renderReady}
-            >
-              Proceed
-            </Button>
-            <Button
-              style={{ float: "right", marginRight: "5px" }}
-              id="demo-positioned-button"
-              aria-controls={open ? "demo-positioned-menu" : undefined}
-              aria-haspopup="true"
-              aria-expanded={open ? "true" : undefined}
-              onClick={handleClick}
-              disabled={!renderReady}
-            >
-              <DownloadIcon /> Download Schema/Data
-            </Button>
-            <Menu
-              id="demo-positioned-menu"
-              aria-labelledby="demo-positioned-button"
-              anchorEl={anchorEl}
-              open={open}
-              onClose={handleClose}
-              anchorOrigin={{
-                vertical: "top",
-                horizontal: "left",
-              }}
-              transformOrigin={{
-                vertical: "top",
-                horizontal: "left",
-              }}
-            >
-              <MenuItem onClick={handleDownloadJsonSchema}>
-                Download JSON Schema
-              </MenuItem>
-              <MenuItem onClick={handleDownloadFormData}>
-                Download JSON Data
-              </MenuItem>
-              <MenuItem onClick={handleDownloadDescriptionList}>
-                Download Description List
-              </MenuItem>
-            </Menu>
-          </div>
-        </div>
         <div style={{ padding: "10px", color: "grey" }}>
           {AdamantVersion["adamant_version"]}
         </div>
@@ -1972,13 +1797,6 @@ const AdamantMain = () => {
         openCreateElabFTWExperimentDialog={openCreateElabFTWExperimentDialog}
         getTagsELabFTW={getTagsELabFTW}
       />
-      <DatasetSubmissionDialog
-        setOpenDatasetSubmissionDialog={setOpenDatasetSubmissionDialog}
-        openDatasetSubmissionDialog={openDatasetSubmissionDialog}
-        submitDataset={submitDataset}
-        handleCreateBundle={handleCreateBundle}
-        handleOnlyCertify={handleOnlyCertify}
-      />
       {openFormReviewDialog ? (
         <FormReviewBeforeSubmit
           onlineMode={onlineMode}
@@ -1988,22 +1806,11 @@ const AdamantMain = () => {
           setOpenFunctions={{
             setOpenCreateElabFTWExperimentDialog,
             setOpenJobRequestDialog,
-            setOpenDatasetSubmissionDialog,
           }}
           submitFunctions={{ submitJobRequest }}
           submitText={submitText}
-          endPoint={window.location.href}
-          loadedFiles={loadedFiles}
         />
       ) : null}
-      {GeneralConfig["usecase-dialog"] ? <ChooseUseCasesDialog
-        openUseCasesDialog={openUseCasesDialog}
-        setOpenUseCasesDialog={setOpenUseCasesDialog}
-        firstName={firstName}
-        loginState={loginState}
-        setOpenLDAPLoginDialog={setOpenLDAPLoginDialog}
-        handleLogOut={handleLogOut}
-      /> : null}
       <LDAPLoginDialog
         openLDAPLoginDialog={openLDAPLoginDialog}
         setOpenLDAPLoginDialog={setOpenLDAPLoginDialog}
@@ -2015,20 +1822,8 @@ const AdamantMain = () => {
         setEmail={setEmail}
         handleLogin={handleLogin}
       />
-      <FilesDialog
-        openFilesDialog={openFilesDialog}
-        setOpenFilesDialog={setFilesDialogContent}
-        content={filesDialogContent}
-      />
-      <ProgressDialog
-        openProgressDialog={openProgressDialog}
-        setOpenProgressDialog={setOpenProgressDialog}
-        title={progressDialogTitle}
-        progress={progress}
-        messages={progressDialogMessages}
-      />
     </>
   );
 };
 
-export default AdamantMain;
+export default AdamantBrowseExp;
