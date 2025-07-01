@@ -13,7 +13,7 @@ As of now, Adamant supports the following features:
 
 A live demo of Adamant (client only) is available at: https://plasma-mds.github.io/adamant/.
 
-Accompanying article can be found at: https://f1000research.com/articles/11-475/v2, which includes the technical description of the tool and its main use cases.
+An accompanying article can be found at: https://doi.org/10.12688/f1000research.110875.2, which includes the technical description of the tool and its main use cases.
 
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/csihda/adamant/blob/main/LICENSE)
 
@@ -37,14 +37,14 @@ Accompanying article can be found at: https://f1000research.com/articles/11-475/
 # Supported JSON schema keywords
 Currently, Adamant supports the rendering and editing of JSON schemas with a specification version draft 4 and 7. The following table lists all the implemented JSON schema keywords in the current version of Adamant. Note that the `id` keyword only works with the JSON schema specification version draft 4, whereas `$id` is used for the newer specification drafts. Lastly, the `contentEncoding` keyword is intended to be used with the specification version draft 7 or newer.
 
-| Field Type | Implemented Keywords | Note |
-|-----------|----------------------|----|
-|String|`title`, `id`, `$id`, `description`, `type`, `enum`, `contentEncoding`, `default`, `minLength`, `maxLength`|`contentEncoding` can only receive a string value of `"base64"`|
-|Number| `title`, `id`, `$id`, `description`, `type`, `enum`, `default`, `minimum`, `maximum` | |
-|Integer| `title`, `id`, `$id`, `description`, `type`, `enum`, `default`, `minimum`, `maximum` | |
-|Boolean| `title`, `id`, `$id`, `description`, `type`, `default` | |
-|Array| `title` , `id`, `$id`, `description`, `type`, `default`, `items`, `minItems`, `maxItems`, `uniqueItems` | |
-|Object| `title`, `id`, `$id`, `description`, `type`, `properties`, `required` | |
+|Field Type|Implemented Keywords|Note|
+|----------|--------------------|----|
+|String |`title`, `id`, `$id`, `description`, `type`, `enum`, `contentEncoding`, `default`, `minLength`, `maxLength`|`contentEncoding` can only receive a string value of `"base64"`|
+|Number |`title`, `id`, `$id`, `description`, `type`, `enum`, `default`, `minimum`, `maximum`                    | |
+|Integer|`title`, `id`, `$id`, `description`, `type`, `enum`, `default`, `minimum`, `maximum`                    | |
+|Boolean|`title`, `id`, `$id`, `description`, `type`, `default`                                                  | |
+|Array  |`title` , `id`, `$id`, `description`, `type`, `default`, `items`, `minItems`, `maxItems`, `uniqueItems` | |
+|Object |`title`, `id`, `$id`, `description`, `type`, `properties`, `required`                                   | |
 
 # Development
 
@@ -101,3 +101,4 @@ The work was funded by the Federal Ministry of Education and Research (BMBF) und
 - [ ] Deprecate older specifications of JSON Schema (at least remove `draft-4`)
 - [ ] Support newer specifications of JSON Schema (at least up to `2019-09`)
 - [ ] ...
+
