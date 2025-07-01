@@ -101,4 +101,3 @@ The work was funded by the Federal Ministry of Education and Research (BMBF) und
 - [ ] Deprecate older specifications of JSON Schema (at least remove `draft-4`)
 - [ ] Support newer specifications of JSON Schema (at least up to `2019-09`)
 - [ ] ...
-
