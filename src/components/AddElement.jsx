@@ -36,7 +36,7 @@ const AddElement = ({ enumerated, field_enumerate, field_required, defaultSchema
     let tempUISchema = JSON.parse(JSON.stringify(defaultSchema))
 
 
-    const datatypes = ["string", "number", "integer", "object", "array", "boolean"]
+    const datatypes = ["string", "number", "integer", "object", "array", "boolean", "date"]
 
 
     const handleOnChangeListField = (event) => {

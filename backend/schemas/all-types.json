@@ -57,6 +57,11 @@
             "description": "Boolean Type Field",
             "type": "boolean"
         },
+        "dateType":{
+            "title": "Date Type Field",
+            "description": "Date Type Field",
+            "type": "date"
+        },
         "arrayTypeEmpty": {
             "title": "Array Type Field (empty)",
             "description": "Array Type Field (empty)",
@@ -88,21 +93,21 @@
             "items":
             {
             "type": "object",
-            "properties": 
+            "properties":
               {
-              "arrayTypeObject_string": 
+              "arrayTypeObject_string":
                 {
                   "title": "arrayTypeObject_string",
                   "description": "arrayTypeObject_string",
                   "type": "string"
                 },
-              "arrayTypeObject_number": 
+              "arrayTypeObject_number":
                 {
                   "title": "arrayTypeObject_number",
                   "description": "arrayTypeObject_number",
                   "type": "number"
                 },
-              "arrayTypeObject_integer": 
+              "arrayTypeObject_integer":
                 {
                   "title": "arrayTypeObject_integer",
                   "description": "arrayTypeObject_integer",
