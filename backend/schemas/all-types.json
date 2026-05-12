@@ -57,6 +57,11 @@
             "description": "Boolean Type Field",
             "type": "boolean"
         },
+        "dateType":{
+            "title": "Date Type Field",
+            "description": "Date Type Field",
+            "type": "date"
+        },
         "arrayTypeEmpty": {
             "title": "Array Type Field (empty)",
             "description": "Array Type Field (empty)",
