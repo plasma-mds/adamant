@@ -25,7 +25,6 @@ const CreateELabFTWExperimentDialog = ({ getTagsELabFTW, eLabURL, setELabURL, se
     const handleCancelEdit = () => {
         setOpenCreateElabFTWExperimentDialog(false)
         setRetrievedTags([])
-        setToken("")
         setTags([])
     }
 
@@ -50,7 +49,7 @@ const CreateELabFTWExperimentDialog = ({ getTagsELabFTW, eLabURL, setELabURL, se
                         <FormControl component="widget-type">
                             <FormLabel style={{ color: "#01579b" }} component="legend">eLabFTW</FormLabel>
                             <TextField required value={eLabURL} margin='normal' onChange={event => setELabURL(event.target.value)} style={{ marginTop: "20px" }} variant="outlined" fullWidth={true} label={"Your eLabFTW main URL"} />
-                            <TextField required margin='normal' onChange={event => setToken(event.target.value)} style={{ marginTop: "20px" }} variant="outlined" fullWidth={true} label={"Your eLabFTW token"} defaultValue={""} />
+                            <TextField required margin='normal' onChange={event => setToken(event.target.value)} style={{ marginTop: "20px" }} variant="outlined" fullWidth={true} label={"Your eLabFTW token"} value={token} />
                             <TextField margin='normal' onBlur={event => setExperimentTitle(event.target.value)} style={{ marginTop: "10px" }} variant="outlined" fullWidth={true} label={"Experiment title"} />
                             <div style={{ display: 'inline-flex', width: '100%' }}>
                                 <Autocomplete

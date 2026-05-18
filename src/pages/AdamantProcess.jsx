@@ -1,10 +1,21 @@
+/*
+Note on developing this .jsx file:
+Basically, it is the same as AdamantRequest.jsx
+Just replace availableRequestSchemas    -> availableExpSchemas
+             setAvailableRequestSchemas -> setAvailableExpSchemas
+             AdamantRequest             -> AdamantProcess
+             requestSchemas             -> experimentSchemas
+             requestSchemasTitle        -> experimentSchemasTitle
+*/
+
 import React, { useCallback, useState } from "react";
 //import { makeStyles } from "@material-ui/core/styles";
 import { useDropzone } from "react-dropzone";
 //import QPTDATLogo from "../assets/header-image.png";
 import FormRenderer from "../components/FormRenderer";
 import Button from "@material-ui/core/Button";
-import { TextField } from "@material-ui/core";
+import { Route } from "react-router-dom";
+import { IconButton, TextField } from "@material-ui/core";
 import Divider from "@material-ui/core/Divider";
 import { FormContext } from "../FormContext";
 import array2object from "../components/utils/array2object";
@@ -31,28 +42,21 @@ import fillValueWithEmptyString from "../components/utils/fillValueWithEmptyStri
 import convData2FormData from "../components/utils/convData2FormData";
 import FormReviewBeforeSubmit from "../components/FormReviewBeforeSubmit";
 import changeKeywords from "../components/utils/changeKeywords";
-//import QPTDATLogo from "../assets/adamant-header-5.svg";
 import QPTDATLogo from "../assets/adamant-header-5.svg";
 import createDescriptionListFromJSON from "../components/utils/createDescriptionListFromJSON";
+import HelpIcon from "@material-ui/icons/HelpOutlineRounded";
+import { Tooltip } from "@material-ui/core";
 import validateSchemaAgainstSpecification from "../components/utils/validateSchemaAgainstSpecification";
-import { Autocomplete } from "@mui/material";
-import checkIDexistence from "../components/utils/checkIDexistence";
-
-import ChooseUseCasesDialog from "../components/ChooseUseCasesDialog";
 import LDAPLoginDialog from "../components/LDAPLoginDialog";
 import DatasetSubmissionDialog from "../components/DatasetSubmissionDialog";
 
 import AdamantVersion from "../assets/adamant_version.json";
-import GeneralConfig from "../general-conf.json"
+import GeneralConfig from "../general-conf.json";
 
 // to create a bundle (download dataset+metadata as .zip)
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import FilesDialog from "../components/FilesDialog"
-
-import ProgressDialog from "../components/ProgressDialog";
-
-
 
 // function that receive the schema and convert it to Form/json data blueprint
 // also to already put the default value to this blueprint
@@ -101,7 +105,33 @@ const removeEmpty = (obj) => {
   return Object.keys(obj).length > 0 || obj instanceof Array ? obj : undefined;
 };
 
-const AdamantMain = () => {
+// initialize color states for request selection buttons
+const createButtonColorStatesFromConfigs = (config) => {
+  let buttonStates = [];
+  for (let i = 0; i < config.length; i++) {
+    let states = {
+      variant: "contained",
+      color: "primary",
+    };
+    buttonStates.push(states);
+  }
+  return buttonStates;
+};
+
+// initialize color states for schema selection buttons
+const createSchemaButtonColorStates = (availableSchemas) => {
+  let buttonStates = [];
+  for (let i = 0; i < availableSchemas.length; i++) {
+    let states = {
+      variant: "outlined",
+      color: "default",
+    };
+    buttonStates.push(states);
+  }
+  return buttonStates;
+};
+
+const AdamantProcess = () => {
   // state management
   const [disable, setDisable] = useState(true);
   const [schemaMessage, setSchemaMessage] = useState(null);
@@ -109,7 +139,7 @@ const AdamantMain = () => {
   const [schema, setSchema] = useState(null);
   const [schemaIntermediate, setSchemaIntermediate] = useState(null);
   const [renderReady, setRenderReady] = useState(false);
-  const [editMode, setEditMode] = useState(false);
+  const [editMode, setEditMode] = useState(true);
   const [schemaList, setSchemaList] = useState([]);
   const [schemaNameList, setSchemaNameList] = useState([]);
   const [selectedSchemaName, setSelectedSchemaName] = useState("");
@@ -137,14 +167,14 @@ const AdamantMain = () => {
     useState(false);
   const [jobRequestSchemas, setJobRequestSchemas] = useState([]);
   const [submitTextList, setSubmitTextList] = useState([]);
+  const [jobRequestConfList, setJobRequestConfList] = useState([]);
   const [submitText, setSubmitText] = useState("Submit Job Request");
-  const [openUseCasesDialog, setOpenUseCasesDialog] = useState(true);
-  const [openLDAPLoginDialog, setOpenLDAPLoginDialog] = useState(false);
-  const [intranetUsername, setIntranetUsername] = useState();
-  const [userPassword, setUserPassword] = useState();
-  const [loginState, setLoginState] = useState("false");
-  const [email, setEmail] = useState("");
-  const [firstName, setFirstName] = useState("");
+  const [availableRequestSchemas, setAvailableRequestSchemas] = useState([]);
+  const [availableExpSchemas, setAvailableExpSchemas] = useState([]);
+  const [renderAvailableSchemas, setRenderAvailableSchemas] = useState(false);
+  const [buttonColorStates, setButtonColorStates] = useState([]);
+  const [schemaSelectionButtonColors, setSchemaSelectionButtonColors] =
+    useState([]);
   // for dropdown buttons
   const [anchorEl, setAnchorEl] = useState(null);
   const [
@@ -159,6 +189,13 @@ const AdamantMain = () => {
     setAnchorEl(null);
   }; //
 
+  const [intranetUsername, setIntranetUsername] = useState();
+  const [userPassword, setUserPassword] = useState();
+  const [openLDAPLoginDialog, setOpenLDAPLoginDialog] = useState(false);
+  const [loginState, setLoginState] = useState("false");
+  const [email, setEmail] = useState("");
+  const [firstName, setFirstName] = useState("");
+
   // loaded files object
   const [loadedFiles, setLoadedFiles] = useState([]);
 
@@ -166,20 +203,7 @@ const AdamantMain = () => {
   const [openFilesDialog, setOpenFilesDialog] = useState(false);
   const [filesDialogContent, setFilesDialogContent] = useState(["", "", ""]);
 
-  // ProgressDialog
-  const [openProgressDialog, setOpenProgressDialog] = useState(false);
-  const [progressDialogMessages, setProgressDialogMessages] = useState([
-    "",
-    "",
-  ]);
-  const [progress, setProgress] = useState(0);
-  const [progressDialogTitle, setProgressDialogTitle] = useState("");
-
-  // blockchain
-  const [hashes, setHashes] = useState({});
-
   //-------------------------- useEffects to save states between reloads ----------------------------
-
   useEffect(() => {
     setFirstName(
       window.sessionStorage.getItem("firstName") === null
@@ -229,8 +253,15 @@ const AdamantMain = () => {
       success: function (status) {
         console.log("Connection to server is established. Online mode");
         setJobRequestSchemas(status["jobRequestSchemaList"]);
-        console.log(status["jobRequestSchemaList"]);
         setSubmitTextList(status["submitButtonText"]);
+        setJobRequestConfList(status["configs"]);
+        setButtonColorStates(
+          createButtonColorStatesFromConfigs(status["configs"])
+        );
+        console.log(
+          "states:",
+          createButtonColorStatesFromConfigs(status["configs"])
+        );
         setOnlineMode(true);
         toast.success(
           <>
@@ -353,6 +384,10 @@ const AdamantMain = () => {
           });
         } else {
           console.log("Login sucessful!");
+          //let arr = [];
+          //for (let i = 0; i < status.length; i++) {
+          //  arr.push(status[i]["tag"]);
+          //}
           setRetrievedTags(status);
           toast.success(`Successfully logged in!`, {
             toastId: "loginSuccess",
@@ -385,14 +420,7 @@ const AdamantMain = () => {
   };
 
   // handle select schema on change
-  const handleSelectSchemaOnChange = (schemaName) => {
-    if (schemaName === null) {
-      clearSchemaOnClick();
-
-      return;
-    }
-
-    //console.log(event)
+  const handleSelectSchemaOnChange = (event) => {
     // first reset states
     setRenderReady(false);
     setDisable(true);
@@ -400,10 +428,10 @@ const AdamantMain = () => {
     setJsonData({});
     //
 
-    console.log("selected schema:", schemaName);
-    setSelectedSchemaName(schemaName);
+    console.log("selected schema:", event.target.value);
+    setSelectedSchemaName(event.target.value);
 
-    let selectedSchema = schemaList[schemaNameList.indexOf(schemaName)];
+    let selectedSchema = schemaList[schemaNameList.indexOf(event.target.value)];
 
     // reset everything when selectedSchema is empty
     if (selectedSchema === null) {
@@ -426,7 +454,7 @@ const AdamantMain = () => {
 
       // update states
       setSchemaValidity(true);
-      setSchemaMessage(`${schemaName} is a valid schema`);
+      setSchemaMessage(`${event.target.value} is a valid schema`);
       setSchema(selectedSchema);
       let oriSchema = JSON.parse(JSON.stringify(selectedSchema));
       setOriginalSchema(oriSchema);
@@ -438,18 +466,15 @@ const AdamantMain = () => {
           //let SEMlogo = require("../assets/sem-header-picture.png");
           //setHeaderImage(SEMlogo["default"]);
           setHeaderImage(QPTDATLogo);
-          setEditMode(false);
-          setSubmitText(
-            submitTextList[jobRequestSchemas.indexOf(convertedSchema["title"])]
-          );
+          setEditMode(true);
         } catch (error) {
           console.log(error);
           setHeaderImage(QPTDATLogo);
-          setEditMode(false);
+          setEditMode(true);
         }
       } else {
         setHeaderImage(QPTDATLogo);
-        setEditMode(false);
+        setEditMode(true);
       }
 
       // create form data
@@ -459,7 +484,7 @@ const AdamantMain = () => {
       console.log(error);
       // update states
       setSchemaValidity(false);
-      setSchemaMessage(`${schemaName} is invalid`);
+      setSchemaMessage(`${event.target.value} is invalid`);
       setSchema(null);
     }
   };
@@ -496,19 +521,14 @@ const AdamantMain = () => {
               //setHeaderImage(SEMlogo["default"]);
               setHeaderImage(QPTDATLogo);
               setEditMode(true);
-              setSubmitText(
-                submitTextList[
-                  jobRequestSchemas.findIndex(convertedSchema["title"])
-                ]
-              );
             } catch (error) {
               console.log(error);
               setHeaderImage(QPTDATLogo);
-              setEditMode(false);
+              setEditMode(true);
             }
           } else {
             setHeaderImage(QPTDATLogo);
-            setEditMode(false);
+            setEditMode(true);
           }
 
           // create form data
@@ -611,22 +631,18 @@ const AdamantMain = () => {
         //setHeaderImage(SEMlogo["default"]);
         setHeaderImage(QPTDATLogo);
         setEditMode(true);
-        setSubmitText(
-          submitTextList[jobRequestSchemas.findIndex(convertedSchema["title"])]
-        );
       } catch (error) {
         console.log(error);
         setHeaderImage(QPTDATLogo);
-        setEditMode(false);
+        setEditMode(true);
       }
     } else {
       setHeaderImage(QPTDATLogo);
-      setEditMode(false);
+      setEditMode(true);
     }
 
     setDisable(false);
     setRenderReady(true);
-    setEditMode(true);
   };
 
   // compile on-click handle
@@ -640,7 +656,7 @@ const AdamantMain = () => {
     if (valid) {
       setInputMode(true);
       setSchema(value);
-      setEditMode(true);
+      setEditMode(false);
       setDisable(true);
     } else {
       toast.error(
@@ -669,7 +685,7 @@ const AdamantMain = () => {
     } else {
       setInputMode(false);
       setSchema(value);
-      setEditMode(false);
+      setEditMode(true);
       setDisable(false);
     }
   };
@@ -798,7 +814,7 @@ const AdamantMain = () => {
     }
     set(convSchemaData, path, value);
     setConvertedSchema(convSchemaData);
-    console.log(convSchemaData);
+    //console.log(convSchemaData);
 
     let data = convData2FormData(
       JSON.parse(JSON.stringify(convSchemaData["properties"]))
@@ -815,19 +831,10 @@ const AdamantMain = () => {
 
   // delete data in jsonData when the field in schema is deleted
   const handleDataDelete = (path) => {
-    console.log("path", path);
-    console.log(jsonData);
     let jData = { ...jsonData };
     let value = deleteKeySchema(jData, path);
     setJsonData(value);
     console.log("Current form data:", value);
-  };
-
-  // handle check if id already exists in the schema
-  const handleCheckIDexistence = (id) => {
-    let result = false;
-    result = checkIDexistence(schema, id, result);
-    return result;
   };
 
   // update form data id if a fieldkey changes, simply delete key value pair of the oldfieldid from jsonData
@@ -997,14 +1004,13 @@ const AdamantMain = () => {
     }
     // create description list
     let footnote = `<div> This template was generated with <span><a title=https://github.com/csihda/adamant href=https://github.com/csihda/adamant>${AdamantVersion["adamant_version"]}</a></span> </div>`;
-    let descList = `<div><span><a title=https://github.com/csihda/adamant href=${eLabURL}$/browse-experiment>Edit experiment on Adamant</a></span> </div>`;
-    descList += createDescriptionListFromJSON(
+    let descList = createDescriptionListFromJSON(
       cleaned,
       convSch,
       convProp,
       schema,
       footnote,
-      true
+      false
     ); // false means without styling
 
     setDescriptionList(descList);
@@ -1069,30 +1075,7 @@ const AdamantMain = () => {
     if (content === undefined) {
       content = {};
     }
-    console.log("content", content);
-    //console.log("loadedFiles", loadedFiles)
-
-    /*
-    // get the paths where the uploaded files are from content
-    let fileEntries = []
-    for (let i=0; i<loadedFiles.length; i++) {
-      let file = loadedFiles[i]
-      let fileName = file["name"]
-      let fileType = file["type"]
-      let fileSize = file["size"]
-      //console.log(file["name"])
-      fileEntries.push(`fileupload:${fileType};${fileName};${fileSize}`)
-    }
-    //console.log(fileEntries)
-    let paths = []
-    for (let i=0; i<fileEntries.length; i++) {
-      let path = getPaths(content, fileEntries[i])
-      paths.push(path)
-    }
-    console.log(paths)
-
-    // read files from loadedFiles then insert it to the content
-    */
+    //console.log("content", content);
 
     //
     // validate jsonData against its schema before submission
@@ -1124,6 +1107,7 @@ const AdamantMain = () => {
       setTags([]);
       return;
     }
+
     // call create experiment api
     console.log("tags:", tags);
     var $ = require("jquery");
@@ -1155,7 +1139,7 @@ const AdamantMain = () => {
         );
 
         // clear states
-        // setToken("");
+        //setToken("");
         setExperimentTitle("");
         setRetrievedTags([]);
         setTags([]);
@@ -1293,143 +1277,6 @@ const AdamantMain = () => {
     });
   };
 
-  // --------------------------------------- Dataset certification feature ------------------------------------
-  const readAndHash = (file) => {
-    return new Promise((resolve) => {
-      let reader = new FileReader();
-      // hash the file
-      reader.onloadend = function () {
-        let file_result = this.result;
-        let file_wordArr = CryptoJS.lib.WordArray.create(file_result);
-        let sha256_hash = CryptoJS.SHA256(file_wordArr);
-        // console.log(`finished hashing "${file["name"]}"`);
-        resolve([file["name"], sha256_hash.toString()]);
-      };
-      reader.readAsArrayBuffer(file);
-    });
-  };
-
-  const certifyOnBloxberg = (hashes, metadata) => {
-    let crid = [];
-    let file_names = [];
-
-    for (const [key, value] of Object.entries(hashes)) {
-      file_names.push(key);
-      crid.push(value);
-    }
-
-    // console.log("crid:", crid);
-    // console.log("file names:", file_names);
-
-    var $ = require("jquery");
-    return $.ajax({
-      type: "POST",
-      url: "/api/certify",
-      async: true,
-      dataType: "json",
-      data: {
-        crid: JSON.stringify(crid),
-        metadata: JSON.stringify(metadata),
-        file_names: JSON.stringify(file_names),
-        hashes_dict: JSON.stringify(hashes),
-      },
-      success: function (status) {
-        //console.log(status);
-        console.log("Certification succeeded");
-      },
-      error: function (status) {
-        console.log("Certification failed");
-      },
-    });
-  };
-
-  async function handleOnlyCertify() {
-    // Prepare metadata
-    let convSchemaData = { ...convertedSchema };
-    let content = convData2FormData(
-      JSON.parse(JSON.stringify(convSchemaData["properties"]))
-    );
-    //// get rid of empty values in content
-    content = removeEmpty(content);
-    if (content === undefined) {
-      content = {};
-    }
-
-    // Prepare schema
-    let contentSchema = { ...schema };
-
-    setOpenProgressDialog(true);
-    setProgressDialogTitle("Processing...");
-    setProgressDialogMessages("Starting...");
-    setProgress(0);
-    let hashDict = {};
-    const increment = 100 / (loadedFiles.length + 1 + 1 + 1 + 1); // num of files plus one certification process plus one zipping process
-                                                                 // plus one metadata plus one schema
-    // find the index of resource key
-    let resourceKeyIndex = 0;
-    for (let i = 0; i < convSchemaData["properties"].length; i++) {
-      if (convSchemaData["properties"][i]["fieldKey"] === "resource") {
-        resourceKeyIndex = i;
-      }
-    }
-
-    // hashing: to do: change the order of the hashing, hash the files first and add the hash into the json data, then hash the json data
-    for (let i = 0; i < loadedFiles.length + 2; i++) {
-      if (i < loadedFiles.length) {
-        setProgressDialogMessages(`Hashing "${loadedFiles[i]["name"]}"...`);
-        const result = await readAndHash(loadedFiles[i]);
-        setProgress((i + 1) * increment);
-        hashDict[result[0]] = result[1];
-        content["resource"]["hash"] = result[1];
-        content["resource"]["hashAlgorithm"] = "SHA-256";
-        convSchemaData["properties"][resourceKeyIndex]["value"][i]["hash"] = result[1];
-        convSchemaData["properties"][resourceKeyIndex]["value"][i]["hashAlgorithm"] = "SHA-256";
-      } else if (i === loadedFiles.length) {
-        setProgressDialogMessages(`Hashing "metadata.json"...`);
-        let content_hash = CryptoJS.SHA256(JSON.stringify(content));
-        setProgress((i + 1) * increment);
-        hashDict["metadata.json"] = content_hash.toString();
-      } else if (i === loadedFiles.length + 1) {
-        setProgressDialogMessages(`Hashing "schema.json"...`);
-        let content_hash = CryptoJS.SHA256(JSON.stringify(contentSchema));
-        setProgress((i + 1) * increment);
-        hashDict["schema.json"] = content_hash.toString();
-      }
-    }
-    setProgressDialogMessages(`Finished hashing all files.`);
-    //console.log("finished:", hashDict);
-    setHashes(hashDict);
-    // certifying
-    setProgressDialogMessages(`Certifying all files...`);
-    const result = await certifyOnBloxberg(hashDict, {});
-    //console.log("result:", result);
-    setProgress((loadedFiles.length + 3) * increment);
-
-    // zip the results together
-    if (result["status_code"] === 200) {
-      setProgressDialogMessages(`Zipping certificates...`);
-      const zip = new JSZip();
-      for (const [file_name, content] of Object.entries(result["data"])) {
-        zip.file(file_name, content, { base64: true });
-      }
-
-      zip.generateAsync({ type: "blob" }).then(function (content) {
-        saveAs(content, "certificates.zip");
-      });
-      setProgress(100);
-      setProgressDialogTitle("Process complete");
-      setProgressDialogMessages(`Finished everything.`);
-      setOpenProgressDialog(false);
-      //setConvertedSchema(convSchemaData);
-      updateParent(convSchemaData);
-    } else {
-      setProgress(0);
-      setProgressDialogTitle("ERROR");
-      setProgressDialogMessages(`ERROR`);
-    }
-  }
-  // -------------------------------------------------------------------------------------------------------
-
   const handleOnClickProceedButton = () => {
     // Create elab ftw description list and store it to the description list state
     let convSch = { ...convertedSchema };
@@ -1456,15 +1303,14 @@ const AdamantMain = () => {
     }
     // create description list
     let footnote = `<div> This template was generated with <span><a title=https://github.com/csihda/adamant href=https://github.com/csihda/adamant>${AdamantVersion["adamant_version"]}</a></span> </div>`;
-    let descList = `<div><span><a title=https://github.com/csihda/adamant href=${eLabURL}$/browse-experiment>Edit experiment on Adamant</a></span> </div>`;
-    descList += createDescriptionListFromJSON(
+    let descList = createDescriptionListFromJSON(
       cleaned,
       convSch,
       convProp,
       schema,
       footnote,
       true
-    ); // false means without styling
+    );
 
     setDescriptionList(descList);
 
@@ -1514,6 +1360,84 @@ const AdamantMain = () => {
     } else {
       //setOpenSubmitDialog(true);
       setOpenFormReviewDialog(true);
+    }
+  };
+
+  const handleJobRequestButton = (content, index) => {
+    // set submit button text
+    setSubmitText(content["submitButtonText"]);
+
+    // clean loaded files
+    setLoadedFiles([]);
+    // reset the button color
+    if (jobRequestConfList.length !== 0) {
+      let btnStates = buttonColorStates;
+      for (let i = 0; i < jobRequestConfList.length; i++) {
+        btnStates[i]["color"] = "primary";
+      }
+      setButtonColorStates(btnStates);
+    }
+
+    // clear rendered schema first
+    clearSchemaOnClick();
+    // and continue
+    let availableSchemas = [];
+    for (let i = 0; i < content["experimentSchemas"].length; i++) {
+      availableSchemas.push({
+        schema: content.experimentSchemas[i],
+        schemaTitle: content.experimentSchemasTitle[i],
+      });
+    }
+    if (availableSchemas.length !== 0) {
+      setRenderAvailableSchemas(true);
+      setAvailableExpSchemas(availableSchemas);
+
+      // create default button color states for schema selection buttons
+      setSchemaSelectionButtonColors(
+        createSchemaButtonColorStates(availableSchemas)
+      );
+    } else {
+      setRenderAvailableSchemas(false);
+      setAvailableExpSchemas([]);
+    }
+
+    // change the button color
+    if (buttonColorStates.length !== 0) {
+      let btnStates = buttonColorStates;
+      btnStates[index]["color"] = "secondary";
+      setButtonColorStates(btnStates);
+    }
+  };
+
+  const handleSelectSchema = (content, index) => {
+    // reset the button color
+    if (availableExpSchemas.length !== 0) {
+      let btnStates = schemaSelectionButtonColors;
+      for (let i = 0; i < availableExpSchemas.length; i++) {
+        btnStates[i]["color"] = "default";
+      }
+      setSchemaSelectionButtonColors(btnStates);
+    }
+
+    // get the index
+    let indx = schemaNameList.indexOf(content["schema"]);
+    let obj = schemaList[indx];
+    let convertedSchema = JSON.parse(JSON.stringify(obj));
+    convertedSchema["properties"] = object2array(obj["properties"]);
+    setSchema(obj);
+    let oriSchema = JSON.parse(JSON.stringify(obj));
+    setOriginalSchema(oriSchema);
+    setSchemaWithValues(JSON.parse(JSON.stringify(oriSchema)));
+    setConvertedSchema(convertedSchema);
+
+    // render the schema
+    renderOnClick();
+
+    // change the button color
+    if (schemaSelectionButtonColors.length !== 0) {
+      let btnStates = schemaSelectionButtonColors;
+      btnStates[index]["color"] = "secondary";
+      setSchemaSelectionButtonColors(btnStates);
     }
   };
 
@@ -1606,12 +1530,12 @@ const AdamantMain = () => {
     <>
       <FormContext.Provider
         value={{
-          loadedFiles,
-          setLoadedFiles,
-          handleRemoveFile,
-          handleLoadedFiles,
           updateParent,
           convertedSchema,
+          setLoadedFiles,
+          loadedFiles,
+          handleRemoveFile,
+          handleLoadedFiles,
           updateFormDataId,
           handleDataDelete,
           handleConvertedDataInput,
@@ -1620,8 +1544,6 @@ const AdamantMain = () => {
           setSchemaSpecification,
           setSEMSelectedDevice,
           implementedFieldTypes,
-          handleCheckIDexistence,
-          openDatasetSubmissionDialog,
         }}
       >
         <div style={{ paddingBottom: "5px" }}>
@@ -1650,13 +1572,17 @@ const AdamantMain = () => {
                 verticalAlign: "top",
               }}
             >
-              <Button
-                onClick={() => {
-                  window.location.reload();
-                }}
-              >
-                Home
-              </Button>
+              <Route
+                render={({ history }) => (
+                  <Button
+                    onClick={() => {
+                      history.push("/");
+                    }}
+                  >
+                    Home
+                  </Button>
+                )}
+              />
               <div style={{ borderRight: "1px solid #D3D3D3" }}></div>
               {loginState === "false" ? (
                 <Button
@@ -1684,7 +1610,43 @@ const AdamantMain = () => {
               )}
             </div>
           </div>
-          {!inputMode ? (
+        </div>
+        <div style={{ fontSize: "20px", padding: "10px 10px 0px 10px" }}>
+          Please select a workflow:
+        </div>
+        <div
+          style={{
+            display: "flex",
+            textAlign: "left",
+            padding: "10px 10px 0px 10px",
+          }}
+        >
+          {jobRequestConfList.length !== 0 && buttonColorStates.length !== 0
+            ? jobRequestConfList.map((content, index) => {
+                return (
+                  <Button
+                    onClick={() => handleJobRequestButton(content, index)}
+                    key={index}
+                    style={{
+                      fontSize: "auto",
+                      height: "50px",
+                      width: "auto",
+                      marginRight: "5px",
+                    }}
+                    color={buttonColorStates[index]["color"]}
+                    variant={buttonColorStates[index]["variant"]}
+                  >
+                    {content["title"]}
+                  </Button>
+                );
+              })
+            : "No job-request config found."}
+        </div>
+        {renderAvailableSchemas ? (
+          <>
+            <div style={{ fontSize: "20px", padding: "10px 10px 0px 10px" }}>
+              Please select a device:
+            </div>
             <div
               style={{
                 display: "flex",
@@ -1692,224 +1654,60 @@ const AdamantMain = () => {
                 padding: "10px 10px 0px 10px",
               }}
             >
-              <form autoComplete="off"
-                style={{
-                  display: "flex",
-                  width: "100%"
-                }}>
-              <Autocomplete
-                disablePortal
-                value={selectedSchemaName}
-                onChange={(event, newValue) =>
-                  handleSelectSchemaOnChange(newValue)
-                }
-                id="select-available-schema"
-                options={schemaNameList}
-                style={{ width: "120%" }}
-                renderInput={(params) => (
-                  <TextField
-                    variant="outlined"
-                    {...params}
-                    label="Select existing schema"
-                  />
-                )}
-              />
-              </form>
-              {/* <TextField
-                onChange={(event) => handleSelectSchemaOnChange(event)}
-                style={{ width: "100%" }}
-                fullWidth={false}
-                value={selectedSchemaName}
-                select
-                id={"select-schema"}
-                label={"Select existing schema"}
-                variant="outlined"
-                SelectProps={{ native: true }}
-              >
-                {schemaNameList.map((content, index) => (
-                  <option key={index} value={content}>
-                    {content}
-                  </option>
-                ))}
-              </TextField>
-              */}
-              <div
-                style={{
-                  paddingLeft: "10px",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                OR
-              </div>
-              <Button
-                style={{ width: "100%", marginLeft: "10px" }}
-                variant="contained"
-                color="primary"
-                {...getRootProps()}
-              >
-                <input {...getInputProps()} />
-                {isDragActive ? "Drop here" : "Browse Schema"}
-              </Button>
-              <div
-                style={{
-                  paddingLeft: "10px",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                OR
-              </div>
-              <Button
-                onClick={() => createSchemaFromScratch()}
-                style={{
-                  width: "100%",
-                  marginLeft: "10px",
-                  marginRight: "10px",
-                }}
-                variant="contained"
-                color="primary"
-              >
-                CREATE FROM SCRATCH
-              </Button>
-              <div
-                style={{
-                  paddingLeft: "10px",
-                  width: "100%",
-                  display: "flex",
-                  justifyContent: "right",
-                  alignItems: "center",
-                }}
-              >
-                {/* <Tooltip
-                  placement="top"
-                  title="Wondering how to use this tool?"
-                >
-                  <Button
-                    onClick={() => {
-                      window.open(
-                        "https://github.com/csihda/adamant",
-                        "_blank" // <- This is what makes it open in a new window.
-                      );
-                    }}
-                  >
-                    <HelpIcon />
-                  </Button>
-                  </Tooltip>*/}
-              </div>
+              {availableExpSchemas.length !== 0
+                ? availableExpSchemas.map((content, index) => {
+                    return (
+                      <Button
+                        onClick={() => handleSelectSchema(content, index)}
+                        key={index}
+                        style={{
+                          fontSize: "12px",
+                          height: "30px",
+                          width: "auto",
+                          marginRight: "5px",
+                        }}
+                        color={schemaSelectionButtonColors[index]["color"]}
+                        variant={schemaSelectionButtonColors[index]["variant"]}
+                      >
+                        {content["schemaTitle"]}
+                      </Button>
+                    );
+                  })
+                : "No job-request config found."}
             </div>
-          ) : null}
-        </div>
-        {!inputMode ? (
-          <div
-            style={{
-              paddingLeft: "10px",
-              display: "flex",
-              width: "100%",
-              textAlign: "left",
-            }}
-          >
-            {schemaValidity === true ? (
-              <>
-                <div
-                  style={{
-                    paddingRight: "10px",
-                    display: "flex",
-                    justifyContent: "left",
-                    alignItems: "center",
-                    color: "green",
-                  }}
-                >
-                  {schemaMessage}. You can now render the form.
-                </div>
-                <Button
-                  style={{ marginRight: "5px" }}
-                  onClick={() => renderOnClick()}
-                  variant="outlined"
-                >
-                  Render
-                </Button>
-                <Button
-                  style={{ marginRight: "10px" }}
-                  onClick={() => clearSchemaOnClick()}
-                  variant="outlined"
-                  color="secondary"
-                >
-                  Clear
-                </Button>
-              </>
-            ) : (
-              <>
-                <div
-                  style={{
-                    paddingRight: "10px",
-                    paddingTop: "10px",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    color: "red",
-                  }}
-                >
-                  {schemaMessage}
-                </div>
-              </>
-            )}
-            {createScratchMode === true ? (
-              <>
-                <div
-                  style={{
-                    paddingRight: "10px",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    color: "green",
-                  }}
-                >
-                  Create from scratch mode. You can now start editing.
-                </div>
-                <Button
-                  onClick={() => clearSchemaOnClick()}
-                  variant="outlined"
-                  color="secondary"
-                >
-                  Clear
-                </Button>
-              </>
-            ) : null}
-          </div>
+          </>
         ) : null}
         <div style={{ padding: "10px" }}>
           <Divider />
         </div>
         {renderReady === true ? (
-          <FormRenderer
-            revertAllChanges={revertAllChanges}
-            schema={convertedSchema}
-            setSchemaSpecification={setSchemaSpecification}
-            originalSchema={schema}
-            edit={editMode}
-            setEditMode={setEditMode}
-          />
+          <>
+            <FormRenderer
+              revertAllChanges={revertAllChanges}
+              schema={convertedSchema}
+              setSchemaSpecification={setSchemaSpecification}
+              originalSchema={schema}
+              edit={false}
+              setEditMode={setEditMode}
+            />
+          </>
         ) : null}
         <div style={{ padding: "10px" }}>
           <Divider />
         </div>
-        <div
-          style={{
-            padding: "10px 10px",
-            display: "flex",
-            justifyContent: "right",
-          }}
-        >
-          <div style={{ width: "100%", display: "inline-block" }}>
+        {renderReady === true ? (
+          <div
+            style={{
+              padding: "10px 10px",
+              width: "100%",
+              display: "inline-block",
+            }}
+          >
             <Button
               onClick={() => handleOnClickProceedButton()}
               style={{ float: "right" }}
               variant="contained"
               color="primary"
-              disabled={!renderReady}
             >
               Proceed
             </Button>
@@ -1920,7 +1718,6 @@ const AdamantMain = () => {
               aria-haspopup="true"
               aria-expanded={open ? "true" : undefined}
               onClick={handleClick}
-              disabled={!renderReady}
             >
               <DownloadIcon /> Download Schema/Data
             </Button>
@@ -1950,7 +1747,7 @@ const AdamantMain = () => {
               </MenuItem>
             </Menu>
           </div>
-        </div>
+        ) : null}
         <div style={{ padding: "10px", color: "grey" }}>
           {AdamantVersion["adamant_version"]}
         </div>
@@ -1977,7 +1774,6 @@ const AdamantMain = () => {
         openDatasetSubmissionDialog={openDatasetSubmissionDialog}
         submitDataset={submitDataset}
         handleCreateBundle={handleCreateBundle}
-        handleOnlyCertify={handleOnlyCertify}
       />
       {openFormReviewDialog ? (
         <FormReviewBeforeSubmit
@@ -1996,14 +1792,6 @@ const AdamantMain = () => {
           loadedFiles={loadedFiles}
         />
       ) : null}
-      {GeneralConfig["usecase-dialog"] ? <ChooseUseCasesDialog
-        openUseCasesDialog={openUseCasesDialog}
-        setOpenUseCasesDialog={setOpenUseCasesDialog}
-        firstName={firstName}
-        loginState={loginState}
-        setOpenLDAPLoginDialog={setOpenLDAPLoginDialog}
-        handleLogOut={handleLogOut}
-      /> : null}
       <LDAPLoginDialog
         openLDAPLoginDialog={openLDAPLoginDialog}
         setOpenLDAPLoginDialog={setOpenLDAPLoginDialog}
@@ -2020,15 +1808,8 @@ const AdamantMain = () => {
         setOpenFilesDialog={setFilesDialogContent}
         content={filesDialogContent}
       />
-      <ProgressDialog
-        openProgressDialog={openProgressDialog}
-        setOpenProgressDialog={setOpenProgressDialog}
-        title={progressDialogTitle}
-        progress={progress}
-        messages={progressDialogMessages}
-      />
     </>
   );
 };
 
-export default AdamantMain;
+export default AdamantProcess;

@@ -42,14 +42,20 @@ const useStyles = makeStyles((theme) => ({
     },
 }));
 
-const FormRenderer = ({ setSchemaSpecification, revertAllChanges, schema, edit, originalSchema }) => {
-    const { updateParent, convertedSchema } = useContext(FormContext);
+const FormRenderer = ({ setSchemaSpecification, revertAllChanges, schema, edit, setEditMode, originalSchema }) => {
+    const {setLoadedFiles, updateParent, convertedSchema } = useContext(FormContext);
     const [openDialogAddElement, setOpenDialogAddElement] = useState(false);
     const [openDialog, setOpenDialog] = useState(false);
     const [openSchemaViewer, setOpenSchemaViewer] = useState(false);
     const [receivedData, setReceivedData] = useState()
 
     const classes = useStyles();
+
+    //useEffect(()=>{
+    //    if (initialJSONData !== undefined){
+    //        setReceivedData(initialJSONData)
+    //    }
+    //}, [initialJSONData])
 
     // browse or drag&drop schema file
     const onDrop = useCallback(
@@ -91,6 +97,9 @@ const FormRenderer = ({ setSchemaSpecification, revertAllChanges, schema, edit, 
             console.log("filled form:\n", newValue);
 
             updateParent(newValue);
+            
+            // Cleanup loaded files
+            setLoadedFiles([])
         }
     }, [receivedData])
 
@@ -131,6 +140,9 @@ const FormRenderer = ({ setSchemaSpecification, revertAllChanges, schema, edit, 
         <div style={{ width: "100%", paddingLeft: "10px", paddingRight: "10px" }}>
             <div style={{ paddingTop: "10px", paddingBottom: "10px", display: 'inline-flex', width: '100%' }}>
                 <Typography className={classes.heading} style={{ width: "100%" }}>{title}</Typography>
+                <Tooltip placement="top" title="Toggle form edit mode ON/OFF">
+                    <Button onClick={() => { setEditMode(!edit) }} color={edit ? "primary" : "secondary"} variant="outlined" style={{ width: "150px", marginLeft: "5px", fontSize: "7pt" }} size="small">{edit ? "Edit Mode: ON": "Edit Mode: OFF"}</Button>
+                </Tooltip>
                 <Tooltip placement="top" title="View JSON Schema for this form">
                     <Button onClick={() => setOpenSchemaViewer(true)} style={{ marginLeft: "5px" }}><JsonIcon style={{ height: "22px" }} /></Button>
                 </Tooltip>

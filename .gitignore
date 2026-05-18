@@ -1,5 +1,3 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
 /node_modules
 /.pnp
@@ -17,7 +15,7 @@
 
 # python floders
 /backend/venv
-#/backend/temp-files
+/backend/temp-files
 /backend/sem_operators.json
 /backend/conf/jobrequest-conf.json
 /backend/schemas/sem-experiment-request-schema.json
