@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from "react";
 //import { makeStyles } from "@material-ui/core/styles";
 import { useDropzone } from "react-dropzone";
+import $ from "jquery";
 //import QPTDATLogo from "../assets/header-image.png";
 import FormRenderer from "../components/FormRenderer";
 import Button from "@material-ui/core/Button";
@@ -222,7 +223,6 @@ const AdamantMain = () => {
 
   // check if the front-end is connected to backend at all
   useEffect(() => {
-    let $ = require("jquery");
     $.ajax({
       type: "GET",
       url: "/api/check_mode",
@@ -286,8 +286,7 @@ const AdamantMain = () => {
   useEffect(() => {
     // if online mode then get available schemas from server
     if (onlineMode === true) {
-      let $ = require("jquery");
-      $.ajax({
+        $.ajax({
         type: "GET",
         url: "/api/get_schemas",
         success: function (status) {
@@ -334,7 +333,6 @@ const AdamantMain = () => {
 
   // handle login
   const handleLogin = () => {
-    var $ = require("jquery");
     $.ajax({
       type: "POST",
       url: "/api/login",
@@ -432,10 +430,11 @@ const AdamantMain = () => {
       setOriginalSchema(oriSchema);
       setSchemaWithValues(JSON.parse(JSON.stringify(oriSchema)));
       setConvertedSchema(convertedSchema);
+      setDisable(false);
+      setRenderReady(true);
 
       if (jobRequestSchemas.includes(convertedSchema["title"])) {
         try {
-          //let SEMlogo = require("../assets/sem-header-picture.png");
           //setHeaderImage(SEMlogo["default"]);
           setHeaderImage(QPTDATLogo);
           setEditMode(false);
@@ -489,11 +488,12 @@ const AdamantMain = () => {
           setOriginalSchema(oriSchema);
           setSchemaWithValues(JSON.parse(JSON.stringify(oriSchema)));
           setConvertedSchema(convertedSchema);
+          setDisable(false);
+          setRenderReady(true);
 
           if (jobRequestSchemas.includes(obj["title"])) {
             try {
-              //let SEMlogo = require("../assets/sem-header-picture.png");
-              //setHeaderImage(SEMlogo["default"]);
+                  //setHeaderImage(SEMlogo["default"]);
               setHeaderImage(QPTDATLogo);
               setEditMode(true);
               setSubmitText(
@@ -607,7 +607,6 @@ const AdamantMain = () => {
 
     if (jobRequestSchemas.includes(obj["title"])) {
       try {
-        //let SEMlogo = require("../assets/sem-header-picture.png");
         //setHeaderImage(SEMlogo["default"]);
         setHeaderImage(QPTDATLogo);
         setEditMode(true);
@@ -1023,7 +1022,6 @@ const AdamantMain = () => {
 
   // get available tags from elabftw
   const getTagsELabFTW = () => {
-    var $ = require("jquery");
     $.ajax({
       type: "POST",
       url: "/api/get_tags",
@@ -1126,7 +1124,6 @@ const AdamantMain = () => {
     }
     // call create experiment api
     console.log("tags:", tags);
-    var $ = require("jquery");
     $.ajax({
       type: "POST",
       url: "/api/create_experiment",
@@ -1196,7 +1193,6 @@ const AdamantMain = () => {
       content = {};
     }
 
-    var $ = require("jquery");
     $.ajax({
       type: "POST",
       url: "/api/submit_job_request",
@@ -1321,7 +1317,6 @@ const AdamantMain = () => {
     // console.log("crid:", crid);
     // console.log("file names:", file_names);
 
-    var $ = require("jquery");
     return $.ajax({
       type: "POST",
       url: "/api/certify",
@@ -1811,36 +1806,7 @@ const AdamantMain = () => {
               textAlign: "left",
             }}
           >
-            {schemaValidity === true ? (
-              <>
-                <div
-                  style={{
-                    paddingRight: "10px",
-                    display: "flex",
-                    justifyContent: "left",
-                    alignItems: "center",
-                    color: "green",
-                  }}
-                >
-                  {schemaMessage}. You can now render the form.
-                </div>
-                <Button
-                  style={{ marginRight: "5px" }}
-                  onClick={() => renderOnClick()}
-                  variant="outlined"
-                >
-                  Render
-                </Button>
-                <Button
-                  style={{ marginRight: "10px" }}
-                  onClick={() => clearSchemaOnClick()}
-                  variant="outlined"
-                  color="secondary"
-                >
-                  Clear
-                </Button>
-              </>
-            ) : (
+            {schemaValidity === true ? null : (
               <>
                 <div
                   style={{

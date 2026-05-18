@@ -10,8 +10,7 @@ import AddIcon from "@material-ui/icons/AddBox";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { FormContext } from '../FormContext';
 import DragHandleIcon from "@material-ui/icons/DragIndicator";
-import UploadDataIcon from '@mui/icons-material/UploadFile';
-import { ReactComponent as JsonIcon } from '../assets/json-file-svgrepo-com.svg'
+import JsonIcon from '../assets/json-file-svgrepo-com.svg?react'
 import RevertIvon from "@material-ui/icons/History";
 import EditSchemaHeader from "./EditSchemaHeader";
 import JSONSchemaViewerDialog from "./JSONSchemaViewerDialog";
@@ -143,14 +142,14 @@ const FormRenderer = ({ setSchemaSpecification, revertAllChanges, schema, edit, 
                 <Tooltip placement="top" title="Toggle form edit mode ON/OFF">
                     <Button onClick={() => { setEditMode(!edit) }} color={edit ? "primary" : "secondary"} variant="outlined" style={{ width: "150px", marginLeft: "5px", fontSize: "7pt" }} size="small">{edit ? "Edit Mode: ON": "Edit Mode: OFF"}</Button>
                 </Tooltip>
+                <Tooltip placement="top" title="Upload input data for this form">
+                    <Button variant="outlined" color="secondary" style={{ width: "150px", marginLeft: "5px", fontSize: "7pt" }} size="small" {...getRootProps()}>
+                        <input {...getInputProps()} />
+                        upload input data
+                    </Button>
+                </Tooltip>
                 <Tooltip placement="top" title="View JSON Schema for this form">
                     <Button onClick={() => setOpenSchemaViewer(true)} style={{ marginLeft: "5px" }}><JsonIcon style={{ height: "22px" }} /></Button>
-                </Tooltip>
-                <Tooltip placement="top" title="Upload input data for this form">
-                    <Button style={{ marginLeft: "5px" }}{...getRootProps()}>
-                        <input {...getInputProps()} />
-                        <UploadDataIcon />
-                    </Button>
                 </Tooltip>
                 {edit ? <>
                     <Tooltip placement="top" title="Edit json schema header">

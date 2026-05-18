@@ -1,3 +1,5 @@
+import set from "set-value";
+
 /*
 Function to add or remove "required" flag for a specific field
 */
@@ -27,8 +29,6 @@ const updateRequired = ({ selectedType, path, requiredChecked, field_key, old_fi
     /*if (selectedType === "object") {
         requiredChecked = false
     }*/
-
-    const set = require("set-value");
 
     let newPath = path.split('.')
     newPath.pop()

@@ -176,9 +176,9 @@ const IntegerType = ({ adamant_error_description, adamant_field_error, minimum, 
         if (withinArray !== undefined & withinArray) {
 
             let value = inputValue;
-            value = parseInt(value)
-            if (!isNaN(value)) {
-                setInputValue(value)
+            if (value === "") {
+                // handle clear input
+                setInputValue("")
                 // store in jData
                 let newPathFormData = pathFormData.split(".");
                 newPathFormData.pop()
@@ -190,19 +190,47 @@ const IntegerType = ({ adamant_error_description, adamant_field_error, minimum, 
 
                 let arr = dataInputItems;
                 const items = Array.from(arr);
-                items[field_index][field_key] = value;
+                items[field_index][field_key] = "";
                 setDataInputItems(items);
 
                 // conv. schema data
                 handleConvertedDataInput(items, newPath + ".value", "integer")
+            } else {
+                value = parseInt(value)
+                if (!isNaN(value)) {
+                    setInputValue(value)
+                    // store in jData
+                    let newPathFormData = pathFormData.split(".");
+                    newPathFormData.pop()
+                    newPathFormData = newPathFormData.join(".")
+
+                    let newPath = path.split(".")
+                    newPath.pop()
+                    newPath = newPath.join(".")
+
+                    let arr = dataInputItems;
+                    const items = Array.from(arr);
+                    items[field_index][field_key] = value;
+                    setDataInputItems(items);
+
+                    // conv. schema data
+                    handleConvertedDataInput(items, newPath + ".value", "integer")
+                }
             }
         } else {
             let value = inputValue;
-            value = parseInt(value)
-            if (!isNaN(value)) {
-                setInputValue(value)
+            if (value === "") {
+                // handle clear input
+                setInputValue("")
                 // conv. schema data
-                handleConvertedDataInput(parseInt(inputValue), path + ".value", "integer")
+                handleConvertedDataInput("", path + ".value", "integer")
+            } else {
+                value = parseInt(value)
+                if (!isNaN(value)) {
+                    setInputValue(value)
+                    // conv. schema data
+                    handleConvertedDataInput(parseInt(inputValue), path + ".value", "integer")
+                }
             }
         }
     }

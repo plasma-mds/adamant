@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState, useCallback} from 'react'
+import set from "set-value";
 import TextField from "@material-ui/core/TextField"
 import { makeStyles } from '@material-ui/core/styles';
 import { Button } from '@material-ui/core';
@@ -446,7 +447,6 @@ const EditElement = ({ editOrAdd, field_uri, enumerated, field_enumerate, field_
             }
 
             if (path !== undefined) {
-                const set = require("set-value");
 
                 let properties = getValue(convertedSchema, path)["properties"]
                 properties.push(tempUISchema)
@@ -485,8 +485,7 @@ const EditElement = ({ editOrAdd, field_uri, enumerated, field_enumerate, field_
                 // remove the file in loadedFiles
                 if (UISchema["type"] === "object" && tempUISchema["type"] !== "object") {
                     let cSchema = JSON.parse(JSON.stringify(convertedSchema))
-                    const set = require("set-value");
-                    set(cSchema, path + ".properties", UISchema["properties"])
+                        set(cSchema, path + ".properties", UISchema["properties"])
                     let metmet = getValueInSchemaFullPath(cSchema, path + ".properties")
                     const fileMetadata = getAllFileMetadata(metmet, [])
                     if (fileMetadata.length > 0) {
@@ -534,7 +533,6 @@ const EditElement = ({ editOrAdd, field_uri, enumerated, field_enumerate, field_
                 updateParent(newConvertedSchema)
                 setOpenDialog(false)
             } else {
-                const set = require("set-value");
                 let properties = convertedSchema["properties"]
                 properties.push(tempUISchema)
                 convertedSchema["properties"] = properties
@@ -573,8 +571,7 @@ const EditElement = ({ editOrAdd, field_uri, enumerated, field_enumerate, field_
                 // remove the file in loadedFiles
                 if (UISchema["type"] === "object" && tempUISchema["type"] !== "object") {
                     let cSchema = JSON.parse(JSON.stringify(convertedSchema))
-                    const set = require("set-value");
-                    set(cSchema, path + ".properties", UISchema["properties"])
+                        set(cSchema, path + ".properties", UISchema["properties"])
                     let metmet = getValueInSchemaFullPath(cSchema, path + ".properties")
                     const fileMetadata = getAllFileMetadata(metmet, [])
                     if (fileMetadata.length > 0) {
@@ -813,7 +810,6 @@ const EditElement = ({ editOrAdd, field_uri, enumerated, field_enumerate, field_
                 tempUISchema["value"] = ""
             }
 
-            const set = require("set-value");
             set(convertedSchema, path, tempUISchema)
             // update the required value
             let old_field_key = oldFieldkey
@@ -885,7 +881,6 @@ const EditElement = ({ editOrAdd, field_uri, enumerated, field_enumerate, field_
             // remove the file in loadedFiles
             if (UISchema["type"] === "object" && tempUISchema["type"] !== "object") {
                 let cSchema = JSON.parse(JSON.stringify(convertedSchema))
-                const set = require("set-value");
                 set(cSchema, path + ".properties", UISchema["properties"])
                 let metmet = getValueInSchemaFullPath(cSchema, path + ".properties")
                 const fileMetadata = getAllFileMetadata(metmet, [])

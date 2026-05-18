@@ -180,9 +180,9 @@ const NumberType = ({ adamant_error_description, adamant_field_error, minimum, m
         if (withinArray !== undefined & withinArray) {
 
             let value = inputValue;
-            value = parseFloat(value)
-            if (!isNaN(value)) {
-                setInputValue(value)
+            if (value === "") {
+                // handle clear input
+                setInputValue("")
                 // store in jData
                 let newPathFormData = pathFormData.split(".");
                 newPathFormData.pop()
@@ -194,19 +194,47 @@ const NumberType = ({ adamant_error_description, adamant_field_error, minimum, m
 
                 let arr = dataInputItems;
                 const items = Array.from(arr);
-                items[field_index][field_key] = value;
+                items[field_index][field_key] = "";
                 setDataInputItems(items);
 
                 // conv. schema data
                 handleConvertedDataInput(items, newPath + ".value", "number")
+            } else {
+                value = parseFloat(value)
+                if (!isNaN(value)) {
+                    setInputValue(value)
+                    // store in jData
+                    let newPathFormData = pathFormData.split(".");
+                    newPathFormData.pop()
+                    newPathFormData = newPathFormData.join(".")
+
+                    let newPath = path.split(".")
+                    newPath.pop()
+                    newPath = newPath.join(".")
+
+                    let arr = dataInputItems;
+                    const items = Array.from(arr);
+                    items[field_index][field_key] = value;
+                    setDataInputItems(items);
+
+                    // conv. schema data
+                    handleConvertedDataInput(items, newPath + ".value", "number")
+                }
             }
         } else {
             let value = inputValue;
-            value = parseFloat(value)
-            if (!isNaN(value)) {
-                setInputValue(value)
+            if (value === "") {
+                // handle clear input
+                setInputValue("")
                 // conv. schema data
-                handleConvertedDataInput(parseFloat(inputValue), path + ".value", "number")
+                handleConvertedDataInput("", path + ".value", "number")
+            } else {
+                value = parseFloat(value)
+                if (!isNaN(value)) {
+                    setInputValue(value)
+                    // conv. schema data
+                    handleConvertedDataInput(value, path + ".value", "number")
+                }
             }
         }
     }

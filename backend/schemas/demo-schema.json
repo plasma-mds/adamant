@@ -1,6 +1,6 @@
 {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "id": "http://scanning-electron-microscopy",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://scanning-electron-microscopy",
     "title": "Scanning Electron Microscopy (SEM)",
     "description": "A schema to describe a Scanning Electron Microscopy used in an experiment (demo schema)",
     "type": "object",

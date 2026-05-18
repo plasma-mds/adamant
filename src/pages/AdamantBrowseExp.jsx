@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from "react";
+import $ from "jquery";
 //import { makeStyles } from "@material-ui/core/styles";
 import { useDropzone } from "react-dropzone";
 import { Route } from "react-router-dom";
@@ -214,7 +215,6 @@ const AdamantBrowseExp = () => {
 
   // check if the front-end is connected to backend at all
   useEffect(() => {
-    let $ = require("jquery");
     $.ajax({
       type: "GET",
       url: "/api/check_mode",
@@ -278,8 +278,7 @@ const AdamantBrowseExp = () => {
   useEffect(() => {
     // if online mode then get available schemas from server
     if (onlineMode === true) {
-      let $ = require("jquery");
-      $.ajax({
+        $.ajax({
         type: "GET",
         url: "/api/get_schemas",
         success: function (status) {
@@ -326,7 +325,6 @@ const AdamantBrowseExp = () => {
 
   // handle login
   const handleLogin = () => {
-    var $ = require("jquery");
     $.ajax({
       type: "POST",
       url: "/api/login",
@@ -441,7 +439,6 @@ const AdamantBrowseExp = () => {
 
       if (jobRequestSchemas.includes(convertedSchema["title"])) {
         try {
-          //let SEMlogo = require("../assets/sem-header-picture.png");
           //setHeaderImage(SEMlogo["default"]);
           setHeaderImage(QPTDATLogo);
           setEditMode(true);
@@ -489,7 +486,6 @@ const AdamantBrowseExp = () => {
 
       if (jobRequestSchemas.includes(schemaFile["title"])) {
         try {
-          //let SEMlogo = require("../assets/sem-header-picture.png");
           //setHeaderImage(SEMlogo["default"]);
           setHeaderImage(QPTDATLogo);
           setEditMode(true);
@@ -565,7 +561,6 @@ const AdamantBrowseExp = () => {
 
     if (jobRequestSchemas.includes(obj["title"])) {
       try {
-        //let SEMlogo = require("../assets/sem-header-picture.png");
         //setHeaderImage(SEMlogo["default"]);
         setHeaderImage(QPTDATLogo);
         setEditMode(true);
@@ -1017,7 +1012,6 @@ const AdamantBrowseExp = () => {
 
   // get available tags from elabftw
   const getTagsELabFTW = () => {
-    var $ = require("jquery");
     $.ajax({
       type: "POST",
       url: "/api/get_tags",
@@ -1049,7 +1043,6 @@ const AdamantBrowseExp = () => {
 
   // get available tags from elabftw
   const getExperimentsELabFTW = () => {
-    var $ = require("jquery");
     $.ajax({
       type: "POST",
       url: "/api/get_experiments",
@@ -1082,7 +1075,6 @@ const AdamantBrowseExp = () => {
 
   // get available tags from elabftw
   const readExperimentELabFTW = (experimentID) => {
-    var $ = require("jquery");
     $.ajax({
       type: "POST",
       url: "/api/read_experiment",
@@ -1170,7 +1162,6 @@ const AdamantBrowseExp = () => {
     console.log("uploading description list:", descList);
     // -------------------------------------------------------------------------------------------------------
 
-    var $ = require("jquery");
     $.ajax({
       type: "POST",
       url: "/api/update_experiment",
@@ -1273,7 +1264,6 @@ const AdamantBrowseExp = () => {
     }
     // call create experiment api
     console.log("tags:", tags);
-    var $ = require("jquery");
     $.ajax({
       type: "POST",
       url: "/api/create_experiment",
@@ -1343,7 +1333,6 @@ const AdamantBrowseExp = () => {
       content = {};
     }
 
-    var $ = require("jquery");
     $.ajax({
       type: "POST",
       url: "/api/submit_job_request",

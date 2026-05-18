@@ -17,19 +17,31 @@ Accompanying article can be found at: https://f1000research.com/articles/11-475/
 
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/csihda/adamant/blob/main/LICENSE)
 
+
+> [!WARNING]  
+> Please refrain from creating your schema with the `draft-4` specification. It will be deprecated in one of future releases.
+
 # Changelog
 
-## [1.3.0] June 30, 2025
-### Added (only available when deployed with a backend)
-- Start dialog for selecting different use cases (see general conf `src/general-conf.json` to enable this)
-- Browse-and-edit functionality for eLabFTW experiments created with Adamant
-- Faux-login using a user-generated eLabFTW API token
-### Changed
-- Backend `api.py` to support [eLabFTW v5.2.0](https://www.deltablot.com/posts/release-50200/#api-improvements)
-- Location of toast messages is now on the bottom right
-- Render schema workflow: removed the compile step and added "edit mode"
-### Removed
-- HTML/description list representation of the form in the experiment body
+## [1.3.2] May 11, 2026
+### Fixed
+- Critical security fixes.
+- Migrated frontend build system to Vite for improved performance and security.
+- Replaced file upload icon with text-based "UPLOAD INPUT DATA" button for better accessibility.
+- Data persistence bug in NumberType and IntegerType where cleared fields were not removed from form state and hence old values were sent to the backend.
+- Docker related files updated.
+
+### Minor changes
+- Updated `demo-schema.json` and `plasma-mds.json` to `draft-7` specification.
+
+## [1.3.1] December 17, 2025
+### Fixed
+- Assign "Running" status to a new experiment created with Adamant
+- Update experiment is fixed
+### Note
+- Backend `api.py` works with [eLabFTW v5.3.10](https://www.deltablot.com/posts/release-50300/)
+
+
 
 # Main use cases
 # <img src="src/assets/adamant-usecases.svg" alt="drawing" style="width:100%;"/>
@@ -58,6 +70,7 @@ Setting up Adamant on a local machine for development:
 - `adamant/backend$ python -m venv venv`—create a python virtual environment
 - Windows: `adamant/backend$ ./venv/Scripts/activate`—activate the virtual environment
 - Linux: `adamant/backend$ source venv/bin/activate`—activate the virtual environment
+- Create `adamant/backend/temp-files` directory
 - `adamant/backend$ pip install -r requirements.txt`—install the dependencies for the back-end
 - `adamant/backend$ cd ..`—go back to adamant project directory
 - `adamant$ yarn start-api`—start the back-end

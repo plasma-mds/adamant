@@ -1,5 +1,6 @@
-import React, { useContext, useState } from 'react'
-import TextField from "@material-ui/core/TextField"
+import React, { useContext, useState } from 'react';
+import set from "set-value";
+import TextField from "@material-ui/core/TextField";
 import { Button } from '@material-ui/core';
 import AddIcon from "@material-ui/icons/AddBox";
 import Divider from '@material-ui/core/Divider';
@@ -81,8 +82,6 @@ const AddElement = ({ enumerated, field_enumerate, field_required, defaultSchema
         }
 
         if (path !== undefined) {
-            const set = require("set-value");
-
             let properties = getValue(convertedSchema, path)["properties"]
             properties.push(tempUISchema)
             set(convertedSchema, path + ".properties", properties)
@@ -107,7 +106,6 @@ const AddElement = ({ enumerated, field_enumerate, field_required, defaultSchema
             updateParent(newConvertedSchema)
             setOpenDialog(false)
         } else {
-            const set = require("set-value");
             let properties = convertedSchema["properties"]
             properties.push(tempUISchema)
             convertedSchema["properties"] = properties

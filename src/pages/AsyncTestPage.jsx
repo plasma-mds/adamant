@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { IconButton, Button } from "@material-ui/core";
 import ProgressDialog from "../components/ProgressDialog";
 import CryptoJS from "crypto-js";
+import $ from "jquery";
 
 // to create a bundle (download dataset+metadata as .zip)
 import JSZip from "jszip";
@@ -83,7 +84,6 @@ const AsyncTestPage = () => {
     console.log("crid:", crid);
     console.log("file names:", file_names);
 
-    var $ = require("jquery");
     return $.ajax({
       type: "POST",
       url: "/api/certify",

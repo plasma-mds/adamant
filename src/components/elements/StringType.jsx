@@ -12,6 +12,7 @@ import getValue from '../utils/getValue';
 import set from 'set-value';
 import { FileIcon, defaultStyles } from 'react-file-icon';
 import mimeTypesExt from '../../assets/mime-types-extensions-swapped.json'
+import semOperatorDeviceList from "../../assets/sem-operator-device-list.json"
 
 
 const useStyles = makeStyles((theme) => ({
@@ -85,7 +86,6 @@ const StringType = ({ adamant_field_error, adamant_error_description, minLength,
                 setFieldValue("")
             } else {
                 try {
-                    let semOperatorDeviceList = require("../../assets/sem-operator-device-list.json")
                     setFieldValue("")
                     setFieldEnumerate(semOperatorDeviceList[SEMSelectedDevice])
                 }
@@ -330,7 +330,7 @@ const StringType = ({ adamant_field_error, adamant_error_description, minLength,
                             onFocus={() => { handleOnFocus() }}
                             error={inputError}
                             multiline
-                            disabled={["filetype", "fileName", "hash", "hashAlgorithm"].includes(field_key) ? true : false }
+                            disabled={["filetype", "fileName", "hash", "hashAlgorithm"].includes(field_key) ? true : false}
                             onKeyDown={(e) => {
                                 if (e.key === "Enter" && !(e.shiftKey)) {
                                     e.preventDefault();

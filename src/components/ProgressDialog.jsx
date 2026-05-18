@@ -5,7 +5,7 @@ import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import FileReadingGif from '../assets/fileloading.gif'
-import { CircularProgress, LinearProgress, CircularProgressProps } from "@material-ui/core";
+import { CircularProgress, LinearProgress } from "@material-ui/core";
 import { IconButton, Button } from '@material-ui/core';
 import PropTypes from 'prop-types';
 import Typography from '@mui/material/Typography';

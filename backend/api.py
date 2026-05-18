@@ -27,19 +27,24 @@ def check_mode():
     # check if online, and get list of schemas used in job request workflows
     listSchemas = []
     listSubmitText = []
+    emailconf_list = []
     try:
-        with open("./conf/jobrequest-conf.json", "r") as fi:
-            f = fi.read()
-            f = json.loads(f)
-            emailconf_list = f["confList"]
-            for element in emailconf_list:
-                listSchemas.append(element["completeSchemaTitle"])
-                listSchemas.append(element["requestSchemaTitle"])
-                listSubmitText.append(element["submitButtonText"])
-                listSubmitText.append(element["submitButtonText"])
-        return {"message": "connection is a success", "jobRequestSchemaList": listSchemas, "submitButtonText": listSubmitText, "configs": emailconf_list}
+        if os.path.exists("./conf/jobrequest-conf.json"):
+            with open("./conf/jobrequest-conf.json", "r") as fi:
+                f = fi.read()
+                f = json.loads(f)
+                emailconf_list = f.get("confList", [])
+                for element in emailconf_list:
+                    listSchemas.append(element.get("completeSchemaTitle", ""))
+                    listSchemas.append(element.get("requestSchemaTitle", ""))
+                    listSubmitText.append(element.get("submitButtonText", ""))
+                    listSubmitText.append(element.get("submitButtonText", ""))
+            return {"message": "connection is a success", "jobRequestSchemaList": listSchemas, "submitButtonText": listSubmitText, "configs": emailconf_list}
+        else:
+            return {"message": "offline mode", "jobRequestSchemaList": listSchemas, "submitButtonText": listSubmitText, "configs": emailconf_list}
     except Exception as e:
-        return {"message": "connection is a success", "jobRequestSchemaList": listSchemas, "submitButtonText": listSubmitText, "configs": emailconf_list}
+        print(f"Error in check_mode: {e}")
+        return {"message": "offline mode", "jobRequestSchemaList": listSchemas, "submitButtonText": listSubmitText, "configs": emailconf_list}
 
 
 # get schemas from backend
@@ -105,7 +110,9 @@ def create_experiment():
     this_experiment_id = int(this_experiment['id'])
 
     # Modify the body, i.e., give it title and body, and so on
-    params = {'title': title, 'body': '<h1><span style="font-size:14pt;">Goal :</span></h1>\n<p>\xa0</p>\n<h1><span style="font-size:14pt;">Procedure :</span></h1>\n<p>\xa0</p>\n<h1><span style="font-size:14pt;">Results :<br></span></h1>\n<p>\xa0</p>'}
+    params = {'title': title,
+              'body': '<h1><span style="font-size:14pt;">Goal :</span></h1>\n<p>\xa0</p>\n<h1><span style="font-size:14pt;">Procedure :</span></h1>\n<p>\xa0</p>\n<h1><span style="font-size:14pt;">Results :<br></span></h1>\n<p>\xa0</p>',
+              "status": 1}
     response = requests.patch('{0}/api/v2/experiments/{1}'.format(elabURL, this_experiment_id), headers=headers, json=params)
     print('Adding title and body is successful.')
 
@@ -384,7 +391,7 @@ def read_experiment():
 
 @app.route('/api/update_experiment', methods=['POST'])
 def update_experiment():
-    elabURL = request.form['elabURL']
+    elabURL = request.form['eLabURL']
     token = request.form['eLabToken']
     json_schema = request.form['new_schema']
     json_data = request.form['new_data']

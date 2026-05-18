@@ -127,7 +127,6 @@ const ObjectType = ({ adamant_error_description, adamant_field_error, dataInputI
         const [reorderedItem] = items.splice(result.source.index, 1);
         items.splice(result.destination.index, 0, reorderedItem);
 
-        const set = require("set-value");
         let value = { ...convertedSchema }
         set(convertedSchema, path + ".properties", items)
         updateParent(value);

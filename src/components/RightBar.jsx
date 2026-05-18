@@ -1,14 +1,14 @@
-import { IconButton, InputBase, Paper, Icon } from "@mui/material";
-import SearchIcon from "@material-ui/icons/Search"
+import { IconButton, InputBase, Paper } from "@mui/material";
+import SearchIcon from "@material-ui/icons/Search";
 import { Button, Divider } from "@material-ui/core";
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
+import $ from "jquery";
 
 const RightBar = ({ sessionData, setSessionData, isLoggedIn, setIsLoggedIn }) => {
 
 
     useEffect(() => {
-        let $ = require("jquery");
         $.ajax({
             url: "/api/send_current_session",
             type: "GET",
@@ -31,7 +31,6 @@ const RightBar = ({ sessionData, setSessionData, isLoggedIn, setIsLoggedIn }) =>
     }, [])
 
     const onSignIn = () => {
-        let $ = require("jquery");
         $.ajax({
             url: "/login",
             crossDomain: true,
@@ -53,7 +52,6 @@ const RightBar = ({ sessionData, setSessionData, isLoggedIn, setIsLoggedIn }) =>
 
     const onSignOut = () => {
         setIsLoggedIn(false)
-        let $ = require("jquery");
         $.ajax({
             url: "/logout",
             crossDomain: true,
