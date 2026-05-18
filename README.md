@@ -65,7 +65,7 @@ __Known dependencies__: Node.js v14.15.5 and Python 3.8. The rests are handled b
 Setting up Adamant on a local machine for development:
 - `$ git clone https://github.com/csihda/adamant.git`—clone the repository
 - `$ cd adamant`—go to adamant project directory
-- `adamant$ npm install`—install the dependencies for the client-side
+- `adamant$ npm install --legacy-peer-deps`—install the dependencies for the client-side
 - `adamant$ cd backend`—go to backend directory
 - `adamant/backend$ python -m venv venv`—create a python virtual environment
 - Windows: `adamant/backend$ ./venv/Scripts/activate`—activate the virtual environment
@@ -73,8 +73,8 @@ Setting up Adamant on a local machine for development:
 - Create `adamant/backend/temp-files` directory
 - `adamant/backend$ pip install -r requirements.txt`—install the dependencies for the back-end
 - `adamant/backend$ cd ..`—go back to adamant project directory
-- `adamant$ yarn start-api`—start the back-end
-- `adamant$ yarn start`—on a new terminal, in the adamant project directory, start the front-end
+- `adamant$ npm run start-api`—start the back-end
+- `adamant$ npm start`—on a new terminal, in the adamant project directory, start the front-end
 
 By default, Adamant is accessible at `http://localhost:3000`.
 
