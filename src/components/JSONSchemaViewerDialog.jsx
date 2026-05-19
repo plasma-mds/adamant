@@ -7,6 +7,7 @@ import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import CloseIcon from '@material-ui/icons/Close';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 
 const JSONSchemaViewerDialog = ({ openSchemaViewer, setOpenSchemaViewer, jsonschema }) => {
@@ -25,7 +26,15 @@ const JSONSchemaViewerDialog = ({ openSchemaViewer, setOpenSchemaViewer, jsonsch
                     <div style={{ fontSize: "30px", width: "100%", alignSelf: "center" }}>
                         JSON Schema viewer
                     </div>
-                    <IconButton onClick={() => setOpenSchemaViewer(false)}><CloseIcon fontSize="large" color="secondary" /></IconButton>
+                    <IconButton 
+                        onClick={() => {
+                            navigator.clipboard.writeText(JSON.stringify(jsonschema, null, 2));
+                        }}
+                        title="Copy to clipboard"
+                    >
+                        <ContentCopyIcon fontSize="large" color="primary" />
+                    </IconButton>
+                    <IconButton onClick={() => setOpenSchemaViewer(false)} title="Click to close the dialog box"><CloseIcon fontSize="large" color="secondary"/></IconButton>
                 </div>
             </DialogTitle>
             <Divider />
@@ -36,6 +45,7 @@ const JSONSchemaViewerDialog = ({ openSchemaViewer, setOpenSchemaViewer, jsonsch
                     variant="filled"
                     multiline
                     defaultValue={JSON.stringify(jsonschema, null, 2)}
+                    inputProps={{ style: { fontFamily: 'monospace' } }}
                 />
             </DialogContent>
             <DialogActions>

@@ -142,8 +142,8 @@ const FormRenderer = ({ setSchemaSpecification, revertAllChanges, schema, edit, 
                 <Tooltip placement="top" title="Toggle form edit mode ON/OFF">
                     <Button onClick={() => { setEditMode(!edit) }} color={edit ? "primary" : "secondary"} variant="outlined" style={{ width: "150px", marginLeft: "5px", fontSize: "7pt" }} size="small">{edit ? "Edit Mode: ON": "Edit Mode: OFF"}</Button>
                 </Tooltip>
-                <Tooltip placement="top" title="Upload input data for this form">
-                    <Button variant="outlined" color="secondary" style={{ width: "150px", marginLeft: "5px", fontSize: "7pt" }} size="small" {...getRootProps()}>
+                <Tooltip placement="top" title="You can upload a JSON data to prefill this form (only works if the data were created using the same schema)">
+                    <Button variant="outlined" color="primary" style={{ width: "150px", marginLeft: "5px", fontSize: "7pt" }} size="small" {...getRootProps()}>
                         <input {...getInputProps()} />
                         upload input data
                     </Button>

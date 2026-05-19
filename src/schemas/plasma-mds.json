@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "id": "https://www.plasma-mds.org/schema/plasma-mds.json#",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://www.plasma-mds.org/schema/plasma-mds.json#",
   "title": "Plasma Metadata Schema (Plasma-MDS)",
   "description": "Metadata schema for annotation of research data (datasets) in the field of plasma science and technology. Aims to be attached to generic schemata like DCAT or DataCite Metadata Schema. Validates a Plasma-MDS extension.",
   "type": "object",
@@ -141,53 +141,60 @@
     "resource": {
       "title":"Resource",
       "description":"Digital object obtained by diagnostics",
-      "type": "array",
-      "items": 
+      "anyOf": [
         {
-        "type": "object",
-        "properties": 
+        "type": "array",
+        "items": 
           {
-          "id": 
+          "type": "object",
+          "properties": 
             {
-              "title": "UUID",
-              "description": "System UUID for object identification.",
-              "type": "string"
-            },
-          "url": 
-            {
-              "title": "URL",
-              "description": "Download link (URL) of the resource.",
-              "type": "string"
-            },
-          "filetype": 
-            {
-              "title": "Resource Filetype",
-              "description": "File type of the resource. Examples: csv, pdf, png, txt.",
-              "type": "string"
-            }, 
-          "datatype": 
-            {
-              "title": "Resource Datatype",
-              "description": "Data type of the resource. Examples: data table, SEM image, cfu-plot, high-speed video.",
-              "type": "string"
-            },
-          "range": 
-            {
-              "title": "Resource Range",
-              "description": "Range in which the resource is valid. Example: wavelength range: 400-800 nm.",
-              "type": "string"
-            },
-          "quality": 
-            {
-              "title": "Resource Quality",
-              "description": "Data quality score. One of: verified, published, reviewed.",
-              "type": "string",
-              "enum": ["verified","published","reviewed"]
+            "id": 
+              {
+                "title": "UUID",
+                "description": "System UUID for object identification.",
+                "type": "string"
+              },
+            "url": 
+              {
+                "title": "URL",
+                "description": "Download link (URL) of the resource.",
+                "type": "string"
+              },
+            "filetype": 
+              {
+                "title": "Resource Filetype",
+                "description": "File type of the resource. Examples: csv, pdf, png, txt.",
+                "type": "string"
+              }, 
+            "datatype": 
+              {
+                "title": "Resource Datatype",
+                "description": "Data type of the resource. Examples: data table, SEM image, cfu-plot, high-speed video.",
+                "type": "string"
+              },
+            "range": 
+              {
+                "title": "Resource Range",
+                "description": "Range in which the resource is valid. Example: wavelength range: 400-800 nm.",
+                "type": "string"
+              },
+            "quality": 
+              {
+                "title": "Resource Quality",
+                "description": "Data quality score. One of: verified, published, reviewed.",
+                "type": "string",
+                "enum": ["verified","published","reviewed"]
+              }
             }
-          }
+          },
+          "minItems": 1,
+          "uniqueItems": true
         },
-      "minItems": 1,
-      "uniqueItems": true
+        {
+          "type": "null"
+        }
+      ]
     }
   }
 }
