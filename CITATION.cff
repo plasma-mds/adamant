@@ -1,21 +1,44 @@
-title: 'Adamant: a JSON schema-based metadata editor for research data management workflows'
-abstract: ' The web tool Adamant has been developed to systematically collect research metadata as early as the conception of the experiment. Adamant enables a continuous, consistent, and transparent research data management (RDM) process, which is a key element of good scientific practice ensuring the path to Findable, Accessible, Interoperable, Reusable (FAIR) research data. It simplifies the creation of on-demand metadata schemas and the collection of metadata according to established or new standards. The approach is based on JavaScript Object Notation (JSON) schema, where any valid schema can be presented as an interactive web-form. Furthermore, Adamant eases the integration of numerous available RDM methods and software tools into the everyday research activities of especially small independent laboratories. A programming interface allows programmatic integration with other software tools such as electronic lab books or repositories. The user interface (UI) of Adamant is designed to be as user friendly as possible. Each UI element is self-explanatory and intuitive to use, which makes it accessible for users that have little to no experience with JSON format and programming in general. Several examples of research data management workflows that can be implemented using Adamant are introduced. Adamant (client-only version) is available from: https://plasma-mds.github.io/adamant.'
-doi: 10.12688/f1000research.110875.2
-repository-code: https://github.com/plasma-mds/adamant/tree/main
-version: '2'
-date-released: 2022-03-29
-authors:
-  - given-names: Ihda Chaerony
-    family-names: Siffa
-    affiliation: INP Greifswald
-  - given-names: Jan
-    family-names: Schäfer
-    affiliation: INP Greifswald
-  - given-names: Markus M.
-    family-names: Becker
-    affiliation: INP Greifswald
-keywords:
-  - Research Data Management
-  - JSON Schema
-  - FAIR Principles
 cff-version: 1.2.0
+title: Adamant
+message: Please cite this software using these metadata.
+type: software
+authors:
+  - given-names: Ihda
+    family-names: Chaerony Siffa
+    email: ihda.chaeronysiffa@inp-greifswald.de
+    orcid: 'https://orcid.org/0000-0002-4232-4543'
+    affiliation: >-
+      Leibniz Institute for Plasma Science and Technology
+      (INP)
+  - given-names: Shashank
+    orcid: 'https://orcid.org/0000-0002-0208-5090'
+    family-names: Tripathi
+    email: shashank.tripathi@inp-greifswald.de
+    affiliation: >-
+      Leibniz Institute for Plasma Science and Technology
+      (INP)
+repository-code: 'https://github.com/plasma-mds/adamant/'
+url: 'https://plasma-mds.github.io/adamant/'
+abstract: >-
+  Adamant is a JSON schema-based metadata creation tool for
+  various research data management workflows.
+keywords:
+  - Research data management
+  - JSON schema
+  - FAIR principles
+license: MIT
+preferred-citation:
+  type: article
+  authors:
+    - family-names: Chaerony Siffa
+      given-names: Ihda
+    - family-names: Schäfer
+      given-names: Jan
+    - family-names: Becker
+      given-names: Markus M.
+  title: "Adamant: a JSON schema-based metadata editor for research data management workflows"
+  journal: F1000Research
+  doi: 10.12688/f1000research.110875.2
+  year: 2022
+  volume: 11
+  start: 475
