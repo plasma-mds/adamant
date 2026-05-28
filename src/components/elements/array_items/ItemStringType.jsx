@@ -17,7 +17,7 @@ const useStyles = makeStyles((theme) => ({
     },
 }));
 
-const ItemStringType = ({ oDataInputItems, oSetDataInputItems, arrayFieldKey, withinObject, value, pathFormData, dataInputItems, setDataInputItems, path, edit, index, field_key, handleDeleteArrayItem }) => {
+const ItemStringType = ({ oDataInputItems, oSetDataInputItems, arrayFieldKey, withinObject, value, pathFormData, dataInputItems, setDataInputItems, path, edit, index, field_key, handleDeleteArrayItem, field_items }) => {
     const classes = useStyles();
     const { handleConvertedDataInput } = useContext(FormContext)
     //const [fieldValue, setFieldValue] = useState(value === undefined ? undefined : value[index])
@@ -67,7 +67,7 @@ const ItemStringType = ({ oDataInputItems, oSetDataInputItems, arrayFieldKey, wi
                 <Typography className={classes.heading}>{index + 1}.</Typography>
             </div> : null}
             <div style={{ paddingTop: "10px", paddingBottom: "10px", display: 'inline-flex', width: '100%' }}>
-                <TextField size='small' onBlur={(event) => handleOnBlur(event, index)} id={field_key} fullWidth={true} className={classes.heading} variant="outlined" defaultValue={fieldValue} />
+                <TextField size='small' onBlur={(event) => handleOnBlur(event, index)} id={field_key} fullWidth={true} className={classes.heading} variant="outlined" defaultValue={fieldValue} label={field_items && field_items.title ? field_items.title : undefined} />
                 {edit ? <>
                     <IconButton onClick={() => handleDeleteArrayItem(index)} style={{ marginLeft: "5px", marginTop: "5px", height: "45px" }}><DeleteIcon fontSize="small" color="secondary" /></IconButton></> : null}
             </div>

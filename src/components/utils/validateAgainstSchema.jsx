@@ -6,6 +6,8 @@
 
 import Ajv from "ajv";
 import Ajv04 from "ajv-draft-04";
+import Ajv2019 from "ajv/dist/2019";
+import Ajv2020 from "ajv/dist/2020";
 import deleteKeySchema from "./deleteKeySchema";
 import getValueInSchemaFullPath from "./getValueInSchemaFullPath";
 
@@ -68,12 +70,46 @@ const createBetterValidationMessages = (validate, schema) => {
 }
 
 const validateAgainstSchema = (formData, schema) => {
+    try {
+        if (schema["$schema"] !== undefined) {
+            if (schema["$schema"].includes("2020-12")) {
+                console.log("draft-2020-12 is detected")
+                const ajv = new Ajv2020({ allErrors: true });
 
-    if (schema["$schema"] !== undefined) {
-        if (schema["$schema"].includes("draft-04")) {
-            console.log("draft-04 is detected")
-            const ajv = new Ajv04({ schemaId: "id", allErrors: true });
+                const validate = ajv.compile(schema);
+                const valid = validate(formData)
 
+                let messages = createBetterValidationMessages(validate, schema)
+                return [valid, messages];
+            } else if (schema["$schema"].includes("2019-09")) {
+                console.log("draft-2019-09 is detected")
+                const ajv = new Ajv2019({ allErrors: true });
+
+                const validate = ajv.compile(schema);
+                const valid = validate(formData)
+
+                let messages = createBetterValidationMessages(validate, schema)
+                return [valid, messages];
+            } else if (schema["$schema"].includes("draft-04")) {
+                console.log("draft-04 is detected")
+                const ajv = new Ajv04({ schemaId: "id", allErrors: true });
+
+                const validate = ajv.compile(schema);
+                const valid = validate(formData)
+
+                let messages = createBetterValidationMessages(validate, schema)
+                return [valid, messages];
+            } else {
+                const ajv = new Ajv({ allErrors: true });
+
+                const validate = ajv.compile(schema);
+                const valid = validate(formData)
+
+                let messages = createBetterValidationMessages(validate, schema)
+                return [valid, messages];
+            }
+        } else if (schema["schema"] !== undefined) {
+            const ajv = new Ajv({ allErrors: true });
             const validate = ajv.compile(schema);
             const valid = validate(formData)
 
@@ -81,6 +117,13 @@ const validateAgainstSchema = (formData, schema) => {
             return [valid, messages];
         } else {
             const ajv = new Ajv({ allErrors: true });
+            if (schema["$schema"] !== undefined) {
+                schema = deleteKeySchema(schema, "$schema")
+            }
+            if (schema["id"] !== undefined) {
+                schema = deleteKeySchema(schema, "id")
+            }
+
 
             const validate = ajv.compile(schema);
             const valid = validate(formData)
@@ -88,28 +131,20 @@ const validateAgainstSchema = (formData, schema) => {
             let messages = createBetterValidationMessages(validate, schema)
             return [valid, messages];
         }
-    } else if (schema["schema"] !== undefined) {
-        const ajv = new Ajv({ allErrors: true });
-        const validate = ajv.compile(schema);
-        const valid = validate(formData)
-
-        let messages = createBetterValidationMessages(validate, schema)
-        return [valid, messages];
-    } else {
-        const ajv = new Ajv({ allErrors: true });
-        if (schema["$schema"] !== undefined) {
-            schema = deleteKeySchema(schema, "$schema")
-        }
-        if (schema["id"] !== undefined) {
-            schema = deleteKeySchema(schema, "id")
-        }
-
-
-        const validate = ajv.compile(schema);
-        const valid = validate(formData)
-
-        let messages = createBetterValidationMessages(validate, schema)
-        return [valid, messages];
+    } catch (error) {
+        console.error("Schema compilation error:", error);
+        let errorMessage = error.toString();
+        errorMessage = errorMessage.replace("Error: strict mode: unknown keyword", "This specification version does not support keyword");
+        return [
+            false,
+            [
+                {
+                    path: "schema",
+                    field_label: "Schema Specification",
+                    message: `Schema compilation failed: ${errorMessage}. This usually happens when the selected schema specification version (dialect) does not support keywords present in the schema (e.g. 'prefixItems' in draft-07, or 'dependentRequired' in draft-07).`
+                }
+            ]
+        ];
     }
 }
 

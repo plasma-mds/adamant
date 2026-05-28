@@ -25,6 +25,7 @@ const ArrayItemRenderer = ({ oSetDataInputItems, oDataInputItems, arrayFieldKey,
                 handleDeleteArrayItem={handleDeleteArrayItem}
                 edit={edit}
                 field_type={type}
+                field_items={field_items}
             />)
         case 'number':
             return (<ItemNumberType
@@ -44,6 +45,7 @@ const ArrayItemRenderer = ({ oSetDataInputItems, oDataInputItems, arrayFieldKey,
                 handleDeleteArrayItem={handleDeleteArrayItem}
                 edit={edit}
                 field_type={type}
+                field_items={field_items}
             />)
         case 'integer':
             return (<ItemIntegerType
@@ -63,6 +65,7 @@ const ArrayItemRenderer = ({ oSetDataInputItems, oDataInputItems, arrayFieldKey,
                 handleDeleteArrayItem={handleDeleteArrayItem}
                 edit={edit}
                 field_type={type}
+                field_items={field_items}
             />)
         case 'object':
             return (<ItemObjectType

@@ -28,7 +28,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    setupFiles: './test/setup.js',
+    setupFiles: './src/tests/setup.js',
     server: {
       deps: {
         inline: [/@material-ui\/core/, /@material-ui\/icons/, /@mui\/material/],

@@ -29,6 +29,9 @@ import SchemaTwo from "../schemas/demo-schema.json";
 import SchemaThree from "../schemas/example-experiment-schema.json";
 import SchemaFour from "../schemas/example-request-schema.json";
 import SchemaFive from "../schemas/plasma-mds.json";
+import SchemaSix from "../schemas/demo-schema-2019-09.json";
+import SchemaSeven from "../schemas/demo-schema-2020-12.json";
+import SchemaEight from "../schemas/demo-schema-draft-07.json";
 import fillValueWithEmptyString from "../components/utils/fillValueWithEmptyString";
 import convData2FormData from "../components/utils/convData2FormData";
 import FormReviewBeforeSubmit from "../components/FormReviewBeforeSubmit";
@@ -86,15 +89,35 @@ const createFormDataBlueprint = (schemaProperties) => {
 };
 
 // function to remove empty artributes
+const isValEmpty = (val) => {
+  if (val === "" || val === null || val === undefined) {
+    return true;
+  }
+  if (typeof val === "object") {
+    if (val instanceof Array) {
+      return val.every(isValEmpty);
+    }
+    return Object.keys(val).every(k => isValEmpty(val[k]));
+  }
+  return false;
+};
+
+// function to remove empty attributes
 const removeEmpty = (obj) => {
-  Object.keys(obj).forEach((key) => {
-    if (obj[key] && typeof obj[key] === "object") {
-      const childObject = removeEmpty(obj[key]);
-      if (childObject === undefined) {
-        delete obj[key];
+  if (obj instanceof Array) {
+    obj.forEach((item) => {
+      if (item && typeof item === "object") {
+        removeEmpty(item);
       }
-    } else if (obj[key] === "" || obj[key] === null || obj[key] === undefined) {
+    });
+    return obj;
+  }
+
+  Object.keys(obj).forEach((key) => {
+    if (isValEmpty(obj[key])) {
       delete obj[key];
+    } else if (typeof obj[key] === "object") {
+      removeEmpty(obj[key]);
     }
   });
   return Object.keys(obj).length > 0 || obj instanceof Array ? obj : undefined;
@@ -249,6 +272,9 @@ const AdamantBrowseExp = () => {
           "example-experiment-schema.json",
           "example-request-schema.json",
           "plasma-mds.json",
+          "demo-schema-2019-09.json",
+          "demo-schema-2020-12.json",
+          "demo-schema-draft-07.json",
         ]);
         setSchemaList([
           null,
@@ -257,6 +283,9 @@ const AdamantBrowseExp = () => {
           SchemaThree,
           SchemaFour,
           SchemaFive,
+          SchemaSix,
+          SchemaSeven,
+          SchemaEight,
         ]);
 
         toast.warning(
@@ -309,6 +338,9 @@ const AdamantBrowseExp = () => {
             "example-experiment-schema.json",
             "example-request-schema.json",
             "plasma-mds.json",
+            "demo-schema-2019-09.json",
+            "demo-schema-2020-12.json",
+            "demo-schema-draft-07.json",
           ]);
           setSchemaList([
             null,
@@ -317,6 +349,9 @@ const AdamantBrowseExp = () => {
             SchemaThree,
             SchemaFour,
             SchemaFive,
+            SchemaSix,
+            SchemaSeven,
+            SchemaEight,
           ]);
         },
       });
@@ -425,7 +460,8 @@ const AdamantBrowseExp = () => {
     let convertedSchema = JSON.parse(JSON.stringify(selectedSchema));
     try {
       convertedSchema["properties"] = object2array(
-        selectedSchema["properties"]
+        selectedSchema["properties"],
+        selectedSchema
       );
 
       // update states
@@ -473,7 +509,7 @@ const AdamantBrowseExp = () => {
     // place holder
     let convertedSchema = JSON.parse(JSON.stringify(schemaFile));
     try {
-      convertedSchema["properties"] = object2array(schemaFile["properties"]);
+      convertedSchema["properties"] = object2array(schemaFile["properties"], schemaFile);
 
       // update states
       setSchemaValidity(true);
@@ -549,7 +585,7 @@ const AdamantBrowseExp = () => {
 
     // convert obj schema to iterable array properties
     let convertedSchema = JSON.parse(JSON.stringify(obj));
-    convertedSchema["properties"] = object2array(obj["properties"]);
+    convertedSchema["properties"] = object2array(obj["properties"], obj);
 
     // update states
     setCreateScratchMode(true);
@@ -704,7 +740,7 @@ const AdamantBrowseExp = () => {
     let value = { ...originalSchema };
     // convert obj schema to iterable array properties
     let convertedSchema = JSON.parse(JSON.stringify(value));
-    convertedSchema["properties"] = object2array(value["properties"]);
+    convertedSchema["properties"] = object2array(value["properties"], value);
     console.log(convertedSchema);
     setConvertedSchema(convertedSchema);
     setSchema(value);
@@ -851,7 +887,7 @@ const AdamantBrowseExp = () => {
     //
     const [valid, messages] = validateAgainstSchema(content, contentSchema);
     setErrorStuffUponValidation(messages);
-    if (!valid | (Object.keys(content).length === 0)) {
+    if (!valid || (Object.keys(content).length === 0)) {
       toast.error(
         <>
           <div>
@@ -905,7 +941,7 @@ const AdamantBrowseExp = () => {
     //
     const [valid, messages] = validateAgainstSchema(content, contentSchema);
     setErrorStuffUponValidation(messages);
-    if (!valid | (Object.keys(content).length === 0)) {
+    if (!valid || (Object.keys(content).length === 0)) {
       toast.error(
         <>
           <div>
@@ -930,7 +966,7 @@ const AdamantBrowseExp = () => {
     fillValueWithEmptyString(convProp);
     let cleaned = prepareDataForDescList(convProp); // skip keyword that has value of array with objects as its elements
     //let cleaned = removeEmpty(prepareDataForDescList(convSch["properties"]));
-    if ((cleaned === undefined) | (cleaned === {})) {
+    if (cleaned === undefined || Object.keys(cleaned).length === 0) {
       toast.error(
         <>
           <div>
@@ -1240,7 +1276,7 @@ const AdamantBrowseExp = () => {
       JSON.parse(JSON.stringify(contentSchema))
     );
     setErrorStuffUponValidation(messages);
-    if (!valid | (Object.keys(content).length === 0)) {
+    if (!valid || (Object.keys(content).length === 0)) {
       toast.error(
         <>
           <div>
@@ -1385,7 +1421,7 @@ const AdamantBrowseExp = () => {
     fillValueWithEmptyString(convProp);
     let cleaned = prepareDataForDescList(convProp);
     //let cleaned = removeEmpty(prepareDataForDescList(convSch["properties"]));
-    if ((cleaned === undefined) | (cleaned === {})) {
+    if (cleaned === undefined || Object.keys(cleaned).length === 0) {
       toast.error(
         <>
           <div>
@@ -1437,7 +1473,7 @@ const AdamantBrowseExp = () => {
     const [valid, messages] = validateAgainstSchema(content, contentSchema);
     setErrorStuffUponValidation(messages);
     //console.log(content);
-    if (!valid | (Object.keys(content).length === 0)) {
+    if (!valid || (Object.keys(content).length === 0)) {
       toast.error(
         <>
           <div>

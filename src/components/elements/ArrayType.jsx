@@ -72,6 +72,7 @@ const AccordionSummary = withStyles({
 })(MuiAccordionSummary);
 
 const ArrayType = ({ adamant_field_error, adamant_error_description, maxItems, minItems, uniqueItems, oSetDataInputItems, oDataInputItems, withinObject, withinArray, field_uri, value, pathFormData, path, pathSchema, field_required, field_key, field_index, edit, field_label, field_description, field_items, field_prefixItems }) => {
+    const tupleSchemas = field_prefixItems !== undefined ? field_prefixItems : (Array.isArray(field_items) ? field_items : undefined);
     const [openDialog, setOpenDialog] = useState(false);
     const [expand, setExpand] = useState(true);
     const { handleLoadedFiles, handleRemoveFile, loadedFiles, setLoadedFiles, updateParent, convertedSchema, handleDataDelete, handleConvertedDataInput, openDatasetSubmissionDialog } = useContext(FormContext);
@@ -83,7 +84,7 @@ const ArrayType = ({ adamant_field_error, adamant_error_description, maxItems, m
     const [currentFiles, setCurrentFiles] = useState([])
 
     useEffect(()=>{
-        if (field_items["type"] === "object") {
+        if (field_items && field_items["type"] === "object") {
             setDataInputItems([{}])
         }
 
@@ -154,7 +155,7 @@ const ArrayType = ({ adamant_field_error, adamant_error_description, maxItems, m
 
             } else {
                 //console.log("field items:", field_items)
-                if (field_items["properties"]["file"] === undefined) {
+                if (field_items && field_items["properties"] && field_items["properties"]["file"] === undefined) {
                     desiredValues = {
                         "fileName": acceptedFile["name"],
                         "filetype": acceptedFile["type"]
@@ -266,11 +267,38 @@ const ArrayType = ({ adamant_field_error, adamant_error_description, maxItems, m
     }, [value])
     */
     useEffect(() => {
-        if (withinArray !== undefined & withinArray === true) {
+        if (tupleSchemas !== undefined) {
+            let items = [];
+            for (let i = 0; i < tupleSchemas.length; i++) {
+                let newFieldItems = JSON.parse(JSON.stringify(tupleSchemas[i]));
+                newFieldItems["field_key"] = newFieldItems["field_key"] || generateUniqueID();
+                items.push(newFieldItems);
+            }
+            setInputItems(items);
+
+            let initialVal = value !== undefined ? value : [];
+            if (initialVal.length === 0) {
+                for (let i = 0; i < tupleSchemas.length; i++) {
+                    let val = "";
+                    if (tupleSchemas[i]["type"] === "object") {
+                        val = {};
+                    } else if (tupleSchemas[i]["default"] !== undefined) {
+                        val = tupleSchemas[i]["default"];
+                    }
+                    initialVal.push(val);
+                }
+            }
+            setDataInputItems(initialVal);
+
+            if (value === undefined) {
+                handleConvertedDataInput(initialVal, path + ".value", "array");
+            }
+        }
+        else if (withinArray !== undefined & withinArray === true) {
             value = oDataInputItems[field_index][field_key]
 
             if (value !== undefined) {
-                if (field_prefixItems === undefined & field_items !== undefined) {
+                if (tupleSchemas === undefined & field_items !== undefined) {
                     if (field_items["type"] !== "object") {
                         if (Object.keys(field_items).length === 0) {
                             // create field_items if items is empty
@@ -298,7 +326,7 @@ const ArrayType = ({ adamant_field_error, adamant_error_description, maxItems, m
         }
         else {
             if (value !== undefined) {
-                if (field_prefixItems === undefined & field_items !== undefined) {
+                if (tupleSchemas === undefined & field_items !== undefined) {
                     if (field_items["type"] !== "object") {
                         if (Object.keys(field_items).length === 0) {
                             // create field_items if items is empty
@@ -557,7 +585,7 @@ const ArrayType = ({ adamant_field_error, adamant_error_description, maxItems, m
                 return
             }
         }
-        if (field_prefixItems === undefined & field_items !== undefined) {
+        if (tupleSchemas === undefined & field_items !== undefined) {
             if (Object.keys(field_items).length === 0) {
                 // create field_items if items is empty
                 field_items = { type: "string", field_key: `${generateUniqueID()}` }
@@ -818,7 +846,7 @@ const ArrayType = ({ adamant_field_error, adamant_error_description, maxItems, m
                                         );
                                     })}
                                     {provided.placeholder}
-                                    {field_key !== "resource" ? <div style={{ display: "flex", justifyContent: "right" }}>
+                                    {field_key !== "resource" && tupleSchemas === undefined ? <div style={{ display: "flex", justifyContent: "right" }}>
                                         <Button onClick={() => { handleAddArrayItem() }} style={{ fontSize: "12px", marginLeft: "5px", marginTop: "5px", height: "45px" }}><AddIcon style={{ paddingRight: "5px" }} fontSize="small" color="primary" /> Add Item</Button>
                                     </div> : null}
                                 </div>

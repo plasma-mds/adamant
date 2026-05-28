@@ -1,0 +1,58 @@
+{
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
+    "$id": "http://scanning-electron-microscopy-2019-09",
+    "title": "Scanning Electron Microscopy 2019-09",
+    "description": "A schema demonstrating Draft/2019-09 features (unevaluatedProperties, dependentRequired, $defs, and items-array tuple)",
+    "type": "object",
+    "required": ["DeviceModel", "SEMParameters"],
+    "unevaluatedProperties": false,
+    "properties": {
+        "DeviceModel": {
+            "title": "Model of SEM Device",
+            "description": "SEM device model used in the experiment",
+            "type": "string"
+        },
+        "SEMParameters": {
+            "title": "SEM Parameters",
+            "description": "SEM parameters used in the experiment",
+            "type": "object",
+            "properties": {
+                "AccelerationVoltage": {
+                    "$ref": "#/$defs/voltage",
+                    "title": "Acceleration Voltage [kV]",
+                    "description": "Voltage applied to accelerate the electrons (sibling override)",
+                    "type": "number",
+                    "minimum": 10
+                },
+                "WorkingDistance": {
+                    "title": "Working Distance [mm]",
+                    "description": "Distance from the lens to the sample/specimen",
+                    "type": "number"
+                },
+                "ProbeCurrent": {
+                    "title": "Probe Current [nA]",
+                    "description": "Electrical current focused on the specimen",
+                    "type": "number"
+                },
+                "ScanSequence": {
+                    "title": "Scan Sequence (Tuple)",
+                    "description": "Draft 2019-09 tuple using items-array",
+                    "type": "array",
+                    "items": [
+                        { "type": "number", "title": "First pass time [s]" },
+                        { "type": "string", "title": "Operation type" }
+                    ]
+                }
+            },
+            "dependentRequired": {
+                "WorkingDistance": ["ProbeCurrent"]
+            }
+        }
+    },
+    "$defs": {
+        "voltage": {
+            "type": "number",
+            "minimum": 0
+        }
+    }
+}
