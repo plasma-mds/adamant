@@ -25,13 +25,8 @@ Accompanying article can be found at: https://f1000research.com/articles/11-475/
 
 ## [1.4.1] June 1, 2026
 ### Added
-- Support for `null` type fields in schema rendering and editing.
-- Full JSON Schema dialect support for Draft-07, 2019-09, and 2020-12 across form rendering, schema editing, and validation (resolves [#4](https://github.com/plasma-mds/adamant/issues/4); 2020-12 included as additional dialect beyond the original issue scope).
+- Full JSON Schema dialect support for 2019-09, and 2020-12 across form rendering, schema editing, and validation (resolves [#4](https://github.com/plasma-mds/adamant/issues/4); 2020-12 included as additional dialect beyond the original issue scope).
 - Updated demo schemas for Draft-07, 2019-09, and 2020-12 dialects with richer example fields.
-
-### Fixed
-- Validation exception handling for schema-against-specification checks, preventing crashes on unknown dialects.
-- Schema editing dialog now correctly handles dialect-specific keywords and constraints.
 
 ## [1.3.2] May 11, 2026
 ### Fixed
