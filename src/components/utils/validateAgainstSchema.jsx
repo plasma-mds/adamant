@@ -56,6 +56,10 @@ const createBetterValidationMessages = (validate, schema) => {
 
         let field = getValueInSchemaFullPath(schema, path)
         console.log(field)
+        if (!field) {
+            messages.push({ "path": path, "field_label": "Schema", "message": error.message })
+            return
+        }
         let field_label = field["title"]
         let field_type = field["type"]
 
@@ -71,61 +75,74 @@ const createBetterValidationMessages = (validate, schema) => {
 
 const validateAgainstSchema = (formData, schema) => {
     try {
-        if (schema["$schema"] !== undefined) {
-            if (schema["$schema"].includes("2020-12")) {
+        let localSchema = JSON.parse(JSON.stringify(schema));
+        if (localSchema["$schema"] !== undefined) {
+            if (localSchema["$schema"].includes("2020-12")) {
+                localSchema["$schema"] = "https://json-schema.org/draft/2020-12/schema";
+            } else if (localSchema["$schema"].includes("2019-09")) {
+                localSchema["$schema"] = "https://json-schema.org/draft/2019-09/schema";
+            } else if (localSchema["$schema"].includes("draft-07")) {
+                localSchema["$schema"] = "http://json-schema.org/draft-07/schema#";
+            } else if (localSchema["$schema"].includes("draft-04")) {
+                localSchema["$schema"] = "http://json-schema.org/draft-04/schema#";
+            }
+        }
+
+        if (localSchema["$schema"] !== undefined) {
+            if (localSchema["$schema"].includes("2020-12")) {
                 console.log("draft-2020-12 is detected")
-                const ajv = new Ajv2020({ allErrors: true });
+                const ajv = new Ajv2020({ allErrors: true, strict: false });
 
-                const validate = ajv.compile(schema);
+                const validate = ajv.compile(localSchema);
                 const valid = validate(formData)
 
                 let messages = createBetterValidationMessages(validate, schema)
                 return [valid, messages];
-            } else if (schema["$schema"].includes("2019-09")) {
+            } else if (localSchema["$schema"].includes("2019-09")) {
                 console.log("draft-2019-09 is detected")
-                const ajv = new Ajv2019({ allErrors: true });
+                const ajv = new Ajv2019({ allErrors: true, strict: false });
 
-                const validate = ajv.compile(schema);
+                const validate = ajv.compile(localSchema);
                 const valid = validate(formData)
 
                 let messages = createBetterValidationMessages(validate, schema)
                 return [valid, messages];
-            } else if (schema["$schema"].includes("draft-04")) {
+            } else if (localSchema["$schema"].includes("draft-04")) {
                 console.log("draft-04 is detected")
                 const ajv = new Ajv04({ schemaId: "id", allErrors: true });
 
-                const validate = ajv.compile(schema);
+                const validate = ajv.compile(localSchema);
                 const valid = validate(formData)
 
                 let messages = createBetterValidationMessages(validate, schema)
                 return [valid, messages];
             } else {
-                const ajv = new Ajv({ allErrors: true });
+                const ajv = new Ajv({ allErrors: true, strict: false });
 
-                const validate = ajv.compile(schema);
+                const validate = ajv.compile(localSchema);
                 const valid = validate(formData)
 
                 let messages = createBetterValidationMessages(validate, schema)
                 return [valid, messages];
             }
-        } else if (schema["schema"] !== undefined) {
+        } else if (localSchema["schema"] !== undefined) {
             const ajv = new Ajv({ allErrors: true });
-            const validate = ajv.compile(schema);
+            const validate = ajv.compile(localSchema);
             const valid = validate(formData)
 
             let messages = createBetterValidationMessages(validate, schema)
             return [valid, messages];
         } else {
             const ajv = new Ajv({ allErrors: true });
-            if (schema["$schema"] !== undefined) {
-                schema = deleteKeySchema(schema, "$schema")
+            if (localSchema["$schema"] !== undefined) {
+                localSchema = deleteKeySchema(localSchema, "$schema")
             }
-            if (schema["id"] !== undefined) {
-                schema = deleteKeySchema(schema, "id")
+            if (localSchema["id"] !== undefined) {
+                localSchema = deleteKeySchema(localSchema, "id")
             }
 
 
-            const validate = ajv.compile(schema);
+            const validate = ajv.compile(localSchema);
             const valid = validate(formData)
 
             let messages = createBetterValidationMessages(validate, schema)

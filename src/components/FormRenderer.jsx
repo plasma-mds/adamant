@@ -88,7 +88,7 @@ const FormRenderer = ({ setSchemaSpecification, revertAllChanges, schema, edit, 
     // basically fill the form with the recieved data everytime we receive the data
     useEffect(() => {
         if (receivedData !== undefined) {
-            let newValue = { ...convertedSchema };
+            let newValue = JSON.parse(JSON.stringify(convertedSchema));
 
             //fills this converted schema with the received data
             console.log("before filling:\n", JSON.parse(JSON.stringify(newValue)))

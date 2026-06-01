@@ -5,7 +5,7 @@ import ItemStringType from "./array_items/ItemStringType";
 import ItemObjectType from "./array_items/ItemObjectType";
 
 
-const ArrayItemRenderer = ({ oSetDataInputItems, oDataInputItems, arrayFieldKey, withinObject, value, pathSchema, pathFormData, dataInputItems, setDataInputItems, field_label, field_items, path, type, edit, fieldIndex, fieldkey, enumerate, handleDeleteArrayItem, properties, isResource }) => {
+const ArrayItemRenderer = ({ oSetDataInputItems, oDataInputItems, arrayFieldKey, withinObject, value, pathSchema, pathFormData, dataInputItems, setDataInputItems, field_label, field_items, path, type, edit, fieldIndex, fieldkey, enumerate, handleDeleteArrayItem, properties, isResource, isTupleItem }) => {
     switch (type) {
         case 'string':
             return (<ItemStringType
@@ -26,6 +26,7 @@ const ArrayItemRenderer = ({ oSetDataInputItems, oDataInputItems, arrayFieldKey,
                 edit={edit}
                 field_type={type}
                 field_items={field_items}
+                isTupleItem={isTupleItem}
             />)
         case 'number':
             return (<ItemNumberType
@@ -46,6 +47,7 @@ const ArrayItemRenderer = ({ oSetDataInputItems, oDataInputItems, arrayFieldKey,
                 edit={edit}
                 field_type={type}
                 field_items={field_items}
+                isTupleItem={isTupleItem}
             />)
         case 'integer':
             return (<ItemIntegerType
@@ -66,6 +68,7 @@ const ArrayItemRenderer = ({ oSetDataInputItems, oDataInputItems, arrayFieldKey,
                 edit={edit}
                 field_type={type}
                 field_items={field_items}
+                isTupleItem={isTupleItem}
             />)
         case 'object':
             return (<ItemObjectType
@@ -82,7 +85,8 @@ const ArrayItemRenderer = ({ oSetDataInputItems, oDataInputItems, arrayFieldKey,
                 edit={edit}
                 field_type={type}
                 field_items={field_items}
-                isResource = {isResource}
+                isResource={isResource}
+                isTupleItem={isTupleItem}
             />)
 
         default:

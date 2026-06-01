@@ -21,6 +21,7 @@ import updateRequired from './utils/updateRequired';
 import { IconButton } from '@material-ui/core';
 import CloseIcon from '@material-ui/icons/Close';
 import AddIcon from "@material-ui/icons/AddBox";
+import DeleteIcon from "@material-ui/icons/Delete";
 import getValue from './utils/getValue';
 import { useDropzone } from "react-dropzone";
 import object2array from './utils/object2array';
@@ -72,7 +73,8 @@ const EditElement = ({ editOrAdd, field_uri, enumerated, field_enumerate, field_
     const [fieldUri, setFieldUri] = useState(UISchema !== undefined ? UISchema["$id"] : "")
     const [description, setDescription] = useState(UISchema !== undefined ? UISchema["description"] : "")
     const [defValue, setDefValue] = useState(defaultValue !== undefined ? defaultValue : "")
-    const { loadedFiles, handleRemoveFile, updateParent, convertedSchema, updateFormDataId, schemaSpecification, handleDataDelete, handleCheckIDexistence } = useContext(FormContext);
+    const { loadedFiles, handleRemoveFile, updateParent, convertedSchema: _convertedSchema, updateFormDataId, schemaSpecification, handleDataDelete, handleCheckIDexistence } = useContext(FormContext);
+    const convertedSchema = _convertedSchema ? JSON.parse(JSON.stringify(_convertedSchema)) : null;
     const [requiredChecked, setRequiredChecked] = useState(field_required === undefined ? false : field_required)
     const [enumChecked, setEnumChecked] = useState(enumerated === undefined ? false : enumerated)
     const [enumList, setEnumList] = useState(field_enumerate === undefined ? [] : field_enumerate);
@@ -92,6 +94,12 @@ const EditElement = ({ editOrAdd, field_uri, enumerated, field_enumerate, field_
     const [itemSchemaTFrow,setItemSchemaTFrow] = useState(false)
     const [itemSchemaEdit, setItemSchemaEdit] = useState(false)
     const [itemSchemaData, setItemSchemaData] = useState("")
+    const [isTuple, setIsTuple] = useState(false)
+    const [tupleItems, setTupleItems] = useState([])
+    const [numberExclusiveMinMax, setNumberExclusiveMinMax] = useState(["None", "None"])
+    const [multipleOfValue, setMultipleOfValue] = useState("None")
+    const [patternValue, setPatternValue] = useState("")
+    const [formatValue, setFormatValue] = useState("")
 
     let arrayItemTypeList = ["string", "number", "integer", "object"]
     if (UISchema !== undefined) {
@@ -117,20 +125,32 @@ const EditElement = ({ editOrAdd, field_uri, enumerated, field_enumerate, field_
         // for array
         if (UISchema !== undefined) {
             if (UISchema["type"] === "array") {
-                setArrayItemDataType(UISchema["items"]["type"])
-                setArrayItemType(UISchema["items"]["type"])
-                setItemSchemaData(JSON.stringify(UISchema["items"], null, 2))
+                const hasPrefixItems = UISchema["prefixItems"] !== undefined
+                const hasArrayItems = Array.isArray(UISchema["items"])
+                if (hasPrefixItems || hasArrayItems) {
+                    // tuple array
+                    setIsTuple(true)
+                    const src = hasPrefixItems ? UISchema["prefixItems"] : UISchema["items"]
+                    setTupleItems(src.map(item => ({
+                        type: item["type"] || "string",
+                        title: item["title"] || "",
+                        description: item["description"] || ""
+                    })))
+                } else {
+                    const itemsObj = UISchema["items"] || { "type": "string" }
+                    setArrayItemDataType(itemsObj["type"])
+                    setArrayItemType(itemsObj["type"])
+                    setItemSchemaData(JSON.stringify(itemsObj, null, 2))
+                    if (UISchema["items"] === undefined) {
+                        UISchema["items"] = { "type": "string" }
+                    }
+                }
                 let value = [...arrayMinMaxItem]
                 if (UISchema["minItems"] !== undefined) {
                     value[0] = UISchema["minItems"]
                 }
                 if (UISchema["maxItems"] !== undefined) {
                     value[1] = UISchema["maxItems"]
-                }
-                if (UISchema["items"] === undefined) {
-                    UISchema["items"] = { "type": "string" }
-                    setArrayItemDataType(UISchema["items"]["type"])
-                    setItemSchemaData(JSON.stringify({ "type": "string" }, null, 2))
                 }
                 if (arrayUniqueItems) {
                     UISchema["uniqueItems"] = arrayUniqueItems
@@ -156,6 +176,11 @@ const EditElement = ({ editOrAdd, field_uri, enumerated, field_enumerate, field_
                     value[1] = UISchema["maximum"]
                 }
                 setNumberMinMaxValue(value)
+                let excValue = ["None", "None"]
+                if (UISchema["exclusiveMinimum"] !== undefined) { excValue[0] = UISchema["exclusiveMinimum"] }
+                if (UISchema["exclusiveMaximum"] !== undefined) { excValue[1] = UISchema["exclusiveMaximum"] }
+                setNumberExclusiveMinMax(excValue)
+                if (UISchema["multipleOf"] !== undefined) { setMultipleOfValue(UISchema["multipleOf"]) }
             }
         }
 
@@ -170,6 +195,8 @@ const EditElement = ({ editOrAdd, field_uri, enumerated, field_enumerate, field_
                     value[1] = UISchema["maxLength"]
                 }
                 setCharMinMaxLengthValue(value)
+                if (UISchema["pattern"] !== undefined) { setPatternValue(UISchema["pattern"]) }
+                if (UISchema["format"] !== undefined) { setFormatValue(UISchema["format"]) }
             }
         }
     }, [])
@@ -197,13 +224,13 @@ const EditElement = ({ editOrAdd, field_uri, enumerated, field_enumerate, field_
 
     let notImplemented = false;
     if (UISchema !== undefined) {
-        if (!["string", "number", "integer", "object", "array", "boolean", "fileupload (string)"].includes(UISchema["type"])) {
+        if (!["string", "number", "integer", "object", "array", "boolean", "null", "fileupload (string)"].includes(UISchema["type"])) {
             notImplemented = true;
         }
     }
 
 
-    let datatypes = ["string", "number", "integer", "object", "array", "boolean", "fileupload (string)"]
+    let datatypes = ["string", "number", "integer", "object", "array", "boolean", "null", "fileupload (string)"]
 
 
     const handleOnChangeListField = (event) => {
@@ -329,17 +356,34 @@ const EditElement = ({ editOrAdd, field_uri, enumerated, field_enumerate, field_
                 // remove value
                 delete tempUISchema["value"]
 
-                if (arrayItemType === "string") {
-                    tempUISchema["items"] = JSON.parse(itemSchemaData) //{ "type": "string" }
-                }
-                if (arrayItemType === "integer") {
-                    tempUISchema["items"] = JSON.parse(itemSchemaData) //{ "type": "integer" }
-                }
-                if (arrayItemType === "number") {
-                    tempUISchema["items"] = JSON.parse(itemSchemaData) //{ "type": "number" }
-                }
-                if (arrayItemType === "object") {
-                    tempUISchema["items"] = JSON.parse(itemSchemaData)
+                if (isTuple && tupleItems.length > 0) {
+                    const cleanTuple = tupleItems.map(item => {
+                        const obj = { type: item.type }
+                        if (item.title) obj.title = item.title
+                        if (item.description) obj.description = item.description
+                        return obj
+                    })
+                    if (schemaSpecification && schemaSpecification.includes("2020-12")) {
+                        tempUISchema["prefixItems"] = cleanTuple
+                        delete tempUISchema["items"]
+                    } else {
+                        tempUISchema["items"] = cleanTuple
+                        delete tempUISchema["prefixItems"]
+                    }
+                } else {
+                    if (arrayItemType === "string") {
+                        tempUISchema["items"] = JSON.parse(itemSchemaData)
+                    }
+                    if (arrayItemType === "integer") {
+                        tempUISchema["items"] = JSON.parse(itemSchemaData)
+                    }
+                    if (arrayItemType === "number") {
+                        tempUISchema["items"] = JSON.parse(itemSchemaData)
+                    }
+                    if (arrayItemType === "object") {
+                        tempUISchema["items"] = JSON.parse(itemSchemaData)
+                    }
+                    delete tempUISchema["prefixItems"]
                 }
                 if (arrayMinMaxItem[0] !== "None") {
                     tempUISchema["minItems"] = arrayMinMaxItem[0]
@@ -368,12 +412,17 @@ const EditElement = ({ editOrAdd, field_uri, enumerated, field_enumerate, field_
             if (["number", "integer"].includes(tempUISchema["type"])) {
                 // delete all unrelated keywords
                 delete tempUISchema["items"]
+                delete tempUISchema["prefixItems"]
                 delete tempUISchema["minItems"]
                 delete tempUISchema["maxItems"]
                 delete tempUISchema["uniqueItems"]
                 delete tempUISchema["properties"]
                 delete tempUISchema["maximum"]
                 delete tempUISchema["minimum"]
+                delete tempUISchema["pattern"]
+                delete tempUISchema["format"]
+                delete tempUISchema["minLength"]
+                delete tempUISchema["maxLength"]
                 if (numberMinMaxValue[0] !== "None") {
                     tempUISchema["minimum"] = numberMinMaxValue[0]
                 } else {
@@ -384,17 +433,36 @@ const EditElement = ({ editOrAdd, field_uri, enumerated, field_enumerate, field_
                 } else {
                     delete tempUISchema["maximum"]
                 }
+                if (numberExclusiveMinMax[0] !== "None") {
+                    tempUISchema["exclusiveMinimum"] = numberExclusiveMinMax[0]
+                } else {
+                    delete tempUISchema["exclusiveMinimum"]
+                }
+                if (numberExclusiveMinMax[1] !== "None") {
+                    tempUISchema["exclusiveMaximum"] = numberExclusiveMinMax[1]
+                } else {
+                    delete tempUISchema["exclusiveMaximum"]
+                }
+                if (multipleOfValue !== "None" && multipleOfValue !== "") {
+                    tempUISchema["multipleOf"] = multipleOfValue
+                } else {
+                    delete tempUISchema["multipleOf"]
+                }
             }
             // more validation keywords for string
             if (tempUISchema["type"] === "string") {
                 // delete all unrelated keywords
                 delete tempUISchema["items"]
+                delete tempUISchema["prefixItems"]
                 delete tempUISchema["minItems"]
                 delete tempUISchema["maxItems"]
                 delete tempUISchema["uniqueItems"]
                 delete tempUISchema["properties"]
                 delete tempUISchema["maximum"]
                 delete tempUISchema["minimum"]
+                delete tempUISchema["exclusiveMinimum"]
+                delete tempUISchema["exclusiveMaximum"]
+                delete tempUISchema["multipleOf"]
                 if (charMinMaxLengthValue[0] !== "None") {
                     tempUISchema["minLength"] = charMinMaxLengthValue[0]
                 } else {
@@ -405,6 +473,37 @@ const EditElement = ({ editOrAdd, field_uri, enumerated, field_enumerate, field_
                 } else {
                     delete tempUISchema["maxLength"]
                 }
+                if (patternValue !== "") {
+                    tempUISchema["pattern"] = patternValue
+                } else {
+                    delete tempUISchema["pattern"]
+                }
+                if (formatValue !== "") {
+                    tempUISchema["format"] = formatValue
+                } else {
+                    delete tempUISchema["format"]
+                }
+            }
+            // null type has no type-specific validation keywords
+            if (tempUISchema["type"] === "null") {
+                delete tempUISchema["items"]
+                delete tempUISchema["prefixItems"]
+                delete tempUISchema["minItems"]
+                delete tempUISchema["maxItems"]
+                delete tempUISchema["uniqueItems"]
+                delete tempUISchema["properties"]
+                delete tempUISchema["maximum"]
+                delete tempUISchema["minimum"]
+                delete tempUISchema["exclusiveMinimum"]
+                delete tempUISchema["exclusiveMaximum"]
+                delete tempUISchema["multipleOf"]
+                delete tempUISchema["pattern"]
+                delete tempUISchema["format"]
+                delete tempUISchema["minLength"]
+                delete tempUISchema["maxLength"]
+                delete tempUISchema["required"]
+                delete tempUISchema["value"]
+                delete tempUISchema["defaultValue"]
             }
 
             if (tempUISchema["type"] !== "string") {
@@ -696,17 +795,34 @@ const EditElement = ({ editOrAdd, field_uri, enumerated, field_enumerate, field_
                 // remove value
                 delete tempUISchema["value"]
 
-                if (arrayItemType === "string") {
-                    tempUISchema["items"] = JSON.parse(itemSchemaData) //{ "type": "string" }
-                }
-                if (arrayItemType === "integer") {
-                    tempUISchema["items"] = JSON.parse(itemSchemaData) //{ "type": "integer" }
-                }
-                if (arrayItemType === "number") {
-                    tempUISchema["items"] = JSON.parse(itemSchemaData) //{ "type": "number" }
-                }
-                if (arrayItemType === "object") {
-                    tempUISchema["items"] = JSON.parse(itemSchemaData)
+                if (isTuple && tupleItems.length > 0) {
+                    const cleanTuple = tupleItems.map(item => {
+                        const obj = { type: item.type }
+                        if (item.title) obj.title = item.title
+                        if (item.description) obj.description = item.description
+                        return obj
+                    })
+                    if (schemaSpecification && schemaSpecification.includes("2020-12")) {
+                        tempUISchema["prefixItems"] = cleanTuple
+                        delete tempUISchema["items"]
+                    } else {
+                        tempUISchema["items"] = cleanTuple
+                        delete tempUISchema["prefixItems"]
+                    }
+                } else {
+                    if (arrayItemType === "string") {
+                        tempUISchema["items"] = JSON.parse(itemSchemaData)
+                    }
+                    if (arrayItemType === "integer") {
+                        tempUISchema["items"] = JSON.parse(itemSchemaData)
+                    }
+                    if (arrayItemType === "number") {
+                        tempUISchema["items"] = JSON.parse(itemSchemaData)
+                    }
+                    if (arrayItemType === "object") {
+                        tempUISchema["items"] = JSON.parse(itemSchemaData)
+                    }
+                    delete tempUISchema["prefixItems"]
                 }
                 if (arrayMinMaxItem[0] !== "None") {
                     tempUISchema["minItems"] = arrayMinMaxItem[0]
@@ -735,12 +851,17 @@ const EditElement = ({ editOrAdd, field_uri, enumerated, field_enumerate, field_
             if (["number", "integer"].includes(tempUISchema["type"])) {
                 // delete all unrelated keywords
                 delete tempUISchema["items"]
+                delete tempUISchema["prefixItems"]
                 delete tempUISchema["minItems"]
                 delete tempUISchema["maxItems"]
                 delete tempUISchema["uniqueItems"]
                 delete tempUISchema["properties"]
                 delete tempUISchema["maximum"]
                 delete tempUISchema["minimum"]
+                delete tempUISchema["pattern"]
+                delete tempUISchema["format"]
+                delete tempUISchema["minLength"]
+                delete tempUISchema["maxLength"]
                 if (numberMinMaxValue[0] !== "None") {
                     tempUISchema["minimum"] = numberMinMaxValue[0]
                 } else {
@@ -751,17 +872,36 @@ const EditElement = ({ editOrAdd, field_uri, enumerated, field_enumerate, field_
                 } else {
                     delete delete tempUISchema["maximum"]
                 }
+                if (numberExclusiveMinMax[0] !== "None") {
+                    tempUISchema["exclusiveMinimum"] = numberExclusiveMinMax[0]
+                } else {
+                    delete tempUISchema["exclusiveMinimum"]
+                }
+                if (numberExclusiveMinMax[1] !== "None") {
+                    tempUISchema["exclusiveMaximum"] = numberExclusiveMinMax[1]
+                } else {
+                    delete tempUISchema["exclusiveMaximum"]
+                }
+                if (multipleOfValue !== "None" && multipleOfValue !== "") {
+                    tempUISchema["multipleOf"] = multipleOfValue
+                } else {
+                    delete tempUISchema["multipleOf"]
+                }
             }
             // more validation keywords for string
             if (tempUISchema["type"] === "string") {
                 // delete all unrelated keywords
                 delete tempUISchema["items"]
+                delete tempUISchema["prefixItems"]
                 delete tempUISchema["minItems"]
                 delete tempUISchema["maxItems"]
                 delete tempUISchema["uniqueItems"]
                 delete tempUISchema["properties"]
                 delete tempUISchema["maximum"]
                 delete tempUISchema["minimum"]
+                delete tempUISchema["exclusiveMinimum"]
+                delete tempUISchema["exclusiveMaximum"]
+                delete tempUISchema["multipleOf"]
                 if (charMinMaxLengthValue[0] !== "None") {
                     tempUISchema["minLength"] = charMinMaxLengthValue[0]
                 } else {
@@ -772,6 +912,37 @@ const EditElement = ({ editOrAdd, field_uri, enumerated, field_enumerate, field_
                 } else {
                     delete tempUISchema["maxLength"]
                 }
+                if (patternValue !== "") {
+                    tempUISchema["pattern"] = patternValue
+                } else {
+                    delete tempUISchema["pattern"]
+                }
+                if (formatValue !== "") {
+                    tempUISchema["format"] = formatValue
+                } else {
+                    delete tempUISchema["format"]
+                }
+            }
+            // null type has no type-specific validation keywords
+            if (tempUISchema["type"] === "null") {
+                delete tempUISchema["items"]
+                delete tempUISchema["prefixItems"]
+                delete tempUISchema["minItems"]
+                delete tempUISchema["maxItems"]
+                delete tempUISchema["uniqueItems"]
+                delete tempUISchema["properties"]
+                delete tempUISchema["maximum"]
+                delete tempUISchema["minimum"]
+                delete tempUISchema["exclusiveMinimum"]
+                delete tempUISchema["exclusiveMaximum"]
+                delete tempUISchema["multipleOf"]
+                delete tempUISchema["pattern"]
+                delete tempUISchema["format"]
+                delete tempUISchema["minLength"]
+                delete tempUISchema["maxLength"]
+                delete tempUISchema["required"]
+                delete tempUISchema["value"]
+                delete tempUISchema["defaultValue"]
             }
 
 
@@ -931,7 +1102,7 @@ const EditElement = ({ editOrAdd, field_uri, enumerated, field_enumerate, field_
 
             //* update form data if fieldkey change
             // update pathFormData with new fieldkey
-            updateFormDataId(field_key, fieldkey, pathFormData, defaultValue)
+            updateFormDataId(old_field_key, fieldkey, pathFormData, defaultValue)
         }
     }
 
@@ -1371,6 +1542,44 @@ const EditElement = ({ editOrAdd, field_uri, enumerated, field_enumerate, field_
         setArrayUniqueItems(prev => !prev)
     }
 
+    const handleExclusiveMinMax = (event, minMax) => {
+        let value = [...numberExclusiveMinMax]
+        const parsed = parseFloat(event.target.value.replace("None", ""))
+        if (minMax.startsWith("min")) {
+            value[0] = Number.isNaN(parsed) ? "None" : parsed
+        } else {
+            value[1] = Number.isNaN(parsed) ? "None" : parsed
+        }
+        setNumberExclusiveMinMax(value)
+    }
+
+    const handleMultipleOf = (event) => {
+        const val = parseFloat(event.target.value.replace("None", ""))
+        setMultipleOfValue(Number.isNaN(val) ? "None" : val)
+    }
+
+    // tuple handlers
+    const handleAddTupleItem = () => {
+        setTupleItems(prev => [...prev, { type: "string", title: "", description: "" }])
+    }
+    const handleRemoveTupleItem = (index) => {
+        setTupleItems(prev => prev.filter((_, i) => i !== index))
+    }
+    const handleChangeTupleItem = (index, field, value) => {
+        setTupleItems(prev => {
+            const copy = [...prev]
+            copy[index] = { ...copy[index], [field]: value }
+            return copy
+        })
+    }
+    const handleToggleTuple = () => {
+        const next = !isTuple
+        setIsTuple(next)
+        if (next && tupleItems.length === 0) {
+            setTupleItems([{ type: "string", title: "", description: "" }])
+        }
+    }
+
     // function to check if the file accepted is of json format and json schema valid
     const checkSubSchemaValidity = (schemaFile) => {
         // place holder
@@ -1576,6 +1785,12 @@ const EditElement = ({ editOrAdd, field_uri, enumerated, field_enumerate, field_
                                                 <TextField onFocus={() => setNumberMinMaxValueHelpertext("Set the minimum and maximum values of this field.")} value={numberMinMaxValue[1]} onBlur={(event) => { handleMinMaxValueOnBlur(event, "max-" + selectedType) }} onChange={event => handleMinMaxValue(event, "max-" + selectedType)} margin="normal" fullWidth variant='outlined' label="Maximum Value" />
                                             </div>
                                             <div style={{ color: "gray", fontSize: "12px", paddingLeft: "11px", paddingRight: "11px" }}>{numberMinMaxValueHelperText}</div>
+                                            <div style={{ display: "flex" }}>
+                                                <TextField value={numberExclusiveMinMax[0]} onChange={event => handleExclusiveMinMax(event, "min")} margin="normal" fullWidth variant='outlined' label="Exclusive Minimum" helperText="Strict lower bound (value must be strictly greater than this)." />
+                                                <div style={{ paddingLeft: "10px" }}></div>
+                                                <TextField value={numberExclusiveMinMax[1]} onChange={event => handleExclusiveMinMax(event, "max")} margin="normal" fullWidth variant='outlined' label="Exclusive Maximum" helperText="Strict upper bound (value must be strictly less than this)." />
+                                            </div>
+                                            <TextField value={multipleOfValue} onChange={event => handleMultipleOf(event)} margin="normal" fullWidth variant='outlined' label="Multiple Of" helperText="Value must be a multiple of this number. Leave as None to disable." />
                                         </>
                                         : null}
                                     {selectedType === "string" ?
@@ -1586,6 +1801,22 @@ const EditElement = ({ editOrAdd, field_uri, enumerated, field_enumerate, field_
                                                 <TextField onFocus={() => setCharMinMaxHelperText("Set the minimum and maximum length allowed for this string input.")} value={charMinMaxLengthValue[1]} onBlur={(event) => { handleMinMaxCharLengthOnBlur(event, "maxLength") }} onChange={event => handleMinMaxCharLength(event, "maxLength")} margin="normal" fullWidth variant='outlined' label="Maximum Character Length" />
                                             </div>
                                             <div style={{ color: "gray", fontSize: "12px", paddingLeft: "11px", paddingRight: "11px" }}>{charMinMaxHelperText}</div>
+                                            <TextField value={patternValue} onChange={event => setPatternValue(event.target.value)} margin="normal" fullWidth variant='outlined' label="Pattern (regex)" helperText="A regular expression the string value must match. E.g., ^[A-Za-z]+$" />
+                                            <TextField
+                                                value={formatValue}
+                                                onChange={event => setFormatValue(event.target.value)}
+                                                select
+                                                fullWidth
+                                                label="Format"
+                                                margin="normal"
+                                                variant='outlined'
+                                                helperText="Semantic format annotation for this string field."
+                                                SelectProps={{ native: true }}
+                                            >
+                                                {["", "date-time", "date", "time", "email", "hostname", "ipv4", "ipv6", "uri", "uri-reference", "uuid", "json-pointer", "regex"].map(f => (
+                                                    <option key={f} value={f}>{f || "— none —"}</option>
+                                                ))}
+                                            </TextField>
                                         </>
                                         : null}
                                     {["string", "integer", "number"].includes(selectedType) ?
@@ -1600,41 +1831,82 @@ const EditElement = ({ editOrAdd, field_uri, enumerated, field_enumerate, field_
                                     <FormGroup>
                                         {selectedType === "array" ?
                                             <>
-                                                <div style={{ display: "flex" }}>
-                                                    <div style={{ backgroundColor: "#3f51b5", paddingRight: "2px" }}></div>
-                                                    <div style={{ height: "auto", width: "100%", paddingLeft: "5px" }}>
-                                                <TextField
-                                                    size='small'
-                                                    margin="normal"
-                                                    helperText={'Data type of the array items.'}
-                                                    onChange={event => { handleChangeUISchema(event, "itemType"); setArrayItemDataType(event.target.value); handleChangeDefaultItemSchema(event.target.value)}}
-                                                    style={{ marginTop: "10px" }}
-                                                    defaultValue={tempUISchema["items"] !== undefined ? tempUISchema["items"]["type"] : "string"}
-                                                    select
-                                                    fullWidth={true}
-                                                    id={field_key}
-                                                    label={"Item Data Type"}
-                                                    variant="outlined"
-                                                    SelectProps={{
-                                                        native: true,
-                                                    }}
-                                                >
-                                                    {arrayItemTypeList.map((content, index) => (
-                                                        <option key={index} value={content}>
-                                                            {content}
-                                                        </option>
-                                                    ))}
-                                                </TextField>
-                                                        {itemSchemaTFrow ? <TextField fullWidth={true} disabled={!itemSchemaEdit} margin="normal" label={"Item Schema"} onChange={(event) => handleChangeItemSchemaTextField(event)} variant="filled" multiline rows={itemSchemaData.split(/\r?\n|\r|\n/g).length > 10 ? 20 : 2} InputProps={{ className: classes.input }}
-                                                            value={arrayItemDataType === UISchema["items"]["type"] ? itemSchemaData : itemSchemaData}> </TextField> : null}
-                                                    <div style={{ display: "flex", width: "100%", justifyContent: "center" }}>
-                                                            <Button fullWidth={true} size="small" color='primary' margin="normal" variant="outlined" style={{ marginRight: "5px", fontSize: "9pt" }} {...getRootProps()}> <input {...getInputProps()} />Browse Item Schema</Button>
-                                                            <Button fullWidth={true} size="small" color={!itemSchemaEdit ? 'primary':'secondary'} margin="normal" variant="outlined" style={{ fontSize: "9pt" }} onClick={()=> handleEditItemSchema()}> {itemSchemaEdit ? "Save" : "Edit"} Item Schema</Button>
-                                                            <Button fullWidth={true} size="small" color='primary' margin="normal" variant="outlined" style={{ marginLeft: "5px", fontSize: "9pt" }} onClick={() => handleShowItemSchemaText()}> {!itemSchemaTFrow ? "Show" : "Hide" } Item Schema </Button>
+                                                <FormControlLabel
+                                                    control={<Checkbox onChange={handleToggleTuple} checked={isTuple} />}
+                                                    label="Tuple array — each position has a fixed type"
+                                                />
+                                                {isTuple ? (
+                                                    <div style={{ marginLeft: "12px", marginBottom: "8px" }}>
+                                                        <div style={{ color: "gray", fontSize: "11px", marginBottom: "8px" }}>
+                                                            Define each positional item. The keyword used (<code>items</code> vs <code>prefixItems</code>) is chosen automatically based on the loaded schema dialect.
+                                                        </div>
+                                                        {tupleItems.map((item, idx) => (
+                                                            <div key={idx} style={{ display: "flex", gap: "8px", marginBottom: "8px", alignItems: "center" }}>
+                                                                <div style={{ minWidth: "72px", color: "#555", fontSize: "12px", paddingTop: "4px" }}>Position {idx + 1}</div>
+                                                                <TextField
+                                                                    size="small"
+                                                                    select
+                                                                    label="Type"
+                                                                    value={item.type}
+                                                                    onChange={e => handleChangeTupleItem(idx, "type", e.target.value)}
+                                                                    variant="outlined"
+                                                                    style={{ minWidth: "110px" }}
+                                                                    SelectProps={{ native: true }}
+                                                                >
+                                                                    {["string", "number", "integer", "boolean"].map(t => (
+                                                                        <option key={t} value={t}>{t}</option>
+                                                                    ))}
+                                                                </TextField>
+                                                                <TextField
+                                                                    size="small"
+                                                                    label="Title"
+                                                                    value={item.title}
+                                                                    onChange={e => handleChangeTupleItem(idx, "title", e.target.value)}
+                                                                    variant="outlined"
+                                                                    fullWidth
+                                                                />
+                                                                <IconButton size="small" onClick={() => handleRemoveTupleItem(idx)} style={{ flexShrink: 0 }}>
+                                                                    <DeleteIcon fontSize="small" color="secondary" />
+                                                                </IconButton>
+                                                            </div>
+                                                        ))}
+                                                        <Button size="small" variant="outlined" color="primary" onClick={handleAddTupleItem} style={{ marginTop: "4px" }}>
+                                                            <AddIcon fontSize="small" style={{ marginRight: "4px" }} /> Add Position
+                                                        </Button>
                                                     </div>
-                                                    <div style={{ height:"10px", fontSize: "9pt", paddingLeft: "13px", paddingTop: "5px"}}>This is where you edit the item schema for this array type.</div>
-                                                </div>
-                                                </div>
+                                                ) : (
+                                                    <div style={{ display: "flex" }}>
+                                                        <div style={{ backgroundColor: "#3f51b5", paddingRight: "2px" }}></div>
+                                                        <div style={{ height: "auto", width: "100%", paddingLeft: "5px" }}>
+                                                            <TextField
+                                                                size='small'
+                                                                margin="normal"
+                                                                helperText={'Data type of the array items.'}
+                                                                onChange={event => { handleChangeUISchema(event, "itemType"); setArrayItemDataType(event.target.value); handleChangeDefaultItemSchema(event.target.value)}}
+                                                                style={{ marginTop: "10px" }}
+                                                                defaultValue={tempUISchema["items"] !== undefined && !Array.isArray(tempUISchema["items"]) ? tempUISchema["items"]["type"] : "string"}
+                                                                select
+                                                                fullWidth={true}
+                                                                id={field_key}
+                                                                label={"Item Data Type"}
+                                                                variant="outlined"
+                                                                SelectProps={{ native: true }}
+                                                            >
+                                                                {arrayItemTypeList.map((content, index) => (
+                                                                    <option key={index} value={content}>{content}</option>
+                                                                ))}
+                                                            </TextField>
+                                                            {itemSchemaTFrow ? <TextField fullWidth={true} disabled={!itemSchemaEdit} margin="normal" label={"Item Schema"} onChange={(event) => handleChangeItemSchemaTextField(event)} variant="filled" multiline rows={itemSchemaData.split(/\r?\n|\r|\n/g).length > 10 ? 20 : 2} InputProps={{ className: classes.input }}
+                                                                value={itemSchemaData}> </TextField> : null}
+                                                            <div style={{ display: "flex", width: "100%", justifyContent: "center" }}>
+                                                                <Button fullWidth={true} size="small" color='primary' margin="normal" variant="outlined" style={{ marginRight: "5px", fontSize: "9pt" }} {...getRootProps()}> <input {...getInputProps()} />Browse Item Schema</Button>
+                                                                <Button fullWidth={true} size="small" color={!itemSchemaEdit ? 'primary':'secondary'} margin="normal" variant="outlined" style={{ fontSize: "9pt" }} onClick={()=> handleEditItemSchema()}> {itemSchemaEdit ? "Save" : "Edit"} Item Schema</Button>
+                                                                <Button fullWidth={true} size="small" color='primary' margin="normal" variant="outlined" style={{ marginLeft: "5px", fontSize: "9pt" }} onClick={() => handleShowItemSchemaText()}> {!itemSchemaTFrow ? "Show" : "Hide" } Item Schema </Button>
+                                                            </div>
+                                                            <div style={{ height:"10px", fontSize: "9pt", paddingLeft: "13px", paddingTop: "5px"}}>This is where you edit the item schema for this array type.</div>
+                                                        </div>
+                                                    </div>
+                                                )}
                                                 <div style={{ display: "flex" }}>
                                                     <TextField value={arrayMinMaxItem[0]} onChange={event => handleMinMaxArrayItem(event, "min")} onBlur={event => { handleMinMaxArrayItemOnBlur(event, "min") }} margin="normal" fullWidth variant='outlined' label="Min. Array Items" />
                                                     <div style={{ paddingLeft: "10px" }}></div>

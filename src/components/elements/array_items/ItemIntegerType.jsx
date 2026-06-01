@@ -2,7 +2,9 @@ import React, { useContext, useState } from 'react'
 import TextField from "@material-ui/core/TextField"
 import { makeStyles } from '@material-ui/core/styles';
 import DeleteIcon from "@material-ui/icons/Delete";
+import InfoOutlinedIcon from "@material-ui/icons/InfoOutlined";
 import { IconButton } from '@material-ui/core';
+import { Tooltip } from '@material-ui/core';
 import { Typography } from '@material-ui/core';
 import { FormContext } from '../../../FormContext';
 import getUnit from '../../utils/getUnit';
@@ -20,7 +22,7 @@ const useStyles = makeStyles((theme) => ({
     },
 }));
 
-const ItemIntegerType = ({ field_label, oDataInputItems, oSetDataInputItems, arrayFieldKey, withinObject, value, path, pathFormData, dataInputItems, setDataInputItems, edit, index, field_key, handleDeleteArrayItem, field_items }) => {
+const ItemIntegerType = ({ field_label, oDataInputItems, oSetDataInputItems, arrayFieldKey, withinObject, value, path, pathFormData, dataInputItems, setDataInputItems, edit, index, field_key, handleDeleteArrayItem, field_items, isTupleItem }) => {
     const classes = useStyles();
     //const [inputValue, setInputValue] = useState(value === undefined ? "" : value[index] === undefined ? "" : value[index]);
     const { handleConvertedDataInput } = useContext(FormContext);
@@ -103,8 +105,14 @@ const ItemIntegerType = ({ field_label, oDataInputItems, oSetDataInputItems, arr
                 <TextField size='small' onBlur={() => handleInputOnBlur()} onChange={e => handleInputOnChange(e)} value={inputValue} fullWidth={true} className={classes.heading} id={field_key} variant="outlined" label={field_items && field_items.title ? field_items.title : undefined} InputProps={{
                     endAdornment: <InputAdornment position="start">{<MathComponent tex={String.raw`\\${unit}`} />}</InputAdornment>,
                 }} />
-                {edit ? <>
-                    <IconButton onClick={() => handleDeleteArrayItem(index)} style={{ marginLeft: "5px", marginTop: "5px", height: "45px" }}><DeleteIcon fontSize="small" color="secondary" /></IconButton></> : null}
+                {edit ? (isTupleItem ?
+                    <Tooltip placement="top" title="Tuple positions are fixed by the schema. To modify this position's type or label, use the pen icon in the tuple heading.">
+                        <span style={{ marginLeft: "5px", marginTop: "5px", display: "inline-flex", alignItems: "center", color: "rgba(0, 0, 0, 0.38)", cursor: "default", height: "45px" }}>
+                            <InfoOutlinedIcon fontSize="small" />
+                        </span>
+                    </Tooltip>
+                    : <IconButton onClick={() => handleDeleteArrayItem(index)} style={{ marginLeft: "5px", marginTop: "5px", height: "45px" }}><DeleteIcon fontSize="small" color="secondary" /></IconButton>
+                ) : null}
             </div>
 
         </>

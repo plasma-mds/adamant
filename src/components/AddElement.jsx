@@ -3,6 +3,7 @@ import set from "set-value";
 import TextField from "@material-ui/core/TextField";
 import { Button } from '@material-ui/core';
 import AddIcon from "@material-ui/icons/AddBox";
+import DeleteIcon from "@material-ui/icons/Delete";
 import Divider from '@material-ui/core/Divider';
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
@@ -28,15 +29,18 @@ const AddElement = ({ enumerated, field_enumerate, field_required, defaultSchema
     const [fieldkey, setFieldKey] = useState(undefined)
     const [title, setTitle] = useState(undefined)
     const [description, setDescription] = useState(undefined)
-    const { updateParent, convertedSchema } = useContext(FormContext);
+    const { updateParent, convertedSchema: _convertedSchema, schemaSpecification } = useContext(FormContext);
+    const convertedSchema = _convertedSchema ? JSON.parse(JSON.stringify(_convertedSchema)) : null;
     const [requiredChecked, setRequiredChecked] = useState(field_required === undefined ? false : field_required)
     const [enumChecked, setEnumChecked] = useState(enumerated === undefined ? false : enumerated)
     const [enumList, setEnumList] = useState(field_enumerate === undefined ? [] : field_enumerate.join(","));
+    const [isTuple, setIsTuple] = useState(false)
+    const [tupleItems, setTupleItems] = useState([])
 
     let tempUISchema = JSON.parse(JSON.stringify(defaultSchema))
 
 
-    const datatypes = ["string", "number", "integer", "object", "array", "boolean"]
+    const datatypes = ["string", "number", "integer", "object", "array", "boolean", "null"]
 
 
     const handleOnChangeListField = (event) => {
@@ -74,8 +78,29 @@ const AddElement = ({ enumerated, field_enumerate, field_required, defaultSchema
         if (tempUISchema["type"] === "object") {
             tempUISchema["properties"] = []
         }
+        if (tempUISchema["type"] === "null") {
+            delete tempUISchema["items"]
+            delete tempUISchema["properties"]
+            delete tempUISchema["value"]
+        }
         if (tempUISchema["type"] === "array") {
-            tempUISchema["items"] = {}
+            if (isTuple && tupleItems.length > 0) {
+                const cleanTuple = tupleItems.map(item => {
+                    const obj = { type: item.type }
+                    if (item.title) obj.title = item.title
+                    if (item.description) obj.description = item.description
+                    return obj
+                })
+                if (schemaSpecification && schemaSpecification.includes("2020-12")) {
+                    tempUISchema["prefixItems"] = cleanTuple
+                    delete tempUISchema["items"]
+                } else {
+                    tempUISchema["items"] = cleanTuple
+                    delete tempUISchema["prefixItems"]
+                }
+            } else {
+                tempUISchema["items"] = {}
+            }
         }
         if (tempUISchema["type"] !== "string") {
             setEnumChecked(false);
@@ -175,6 +200,28 @@ const AddElement = ({ enumerated, field_enumerate, field_required, defaultSchema
         setEnumChecked(prev => !prev)
     }
 
+    // tuple handlers
+    const handleAddTupleItem = () => {
+        setTupleItems(prev => [...prev, { type: "string", title: "", description: "" }])
+    }
+    const handleRemoveTupleItem = (index) => {
+        setTupleItems(prev => prev.filter((_, i) => i !== index))
+    }
+    const handleChangeTupleItem = (index, field, value) => {
+        setTupleItems(prev => {
+            const copy = [...prev]
+            copy[index] = { ...copy[index], [field]: value }
+            return copy
+        })
+    }
+    const handleToggleTuple = () => {
+        const next = !isTuple
+        setIsTuple(next)
+        if (next && tupleItems.length === 0) {
+            setTupleItems([{ type: "string", title: "", description: "" }])
+        }
+    }
+
     return (
         <><Dialog
             open={openDialog}
@@ -225,6 +272,53 @@ const AddElement = ({ enumerated, field_enumerate, field_required, defaultSchema
                                     <div style={{ marginTop: "10px", marginBottom: "10px" }}>
                                         {enumChecked ? <TextField defaultValue={enumList !== undefined ? enumList : ""} onChange={handleOnChangeListField} variant="outlined" fullWidth={true} label="Enumerate List" multiline rows={4} /> : null}
                                     </div>
+                                </> : null}
+                            {selectedType === "array" ?
+                                <>
+                                    <FormControlLabel
+                                        control={<Checkbox onChange={handleToggleTuple} checked={isTuple} />}
+                                        label="Tuple array — each position has a fixed type"
+                                    />
+                                    {isTuple ? (
+                                        <div style={{ marginLeft: "12px", marginBottom: "8px" }}>
+                                            <div style={{ color: "gray", fontSize: "11px", marginBottom: "8px" }}>
+                                                Define each positional item. The keyword used (<code>items</code> vs <code>prefixItems</code>) is chosen automatically based on the loaded schema dialect.
+                                            </div>
+                                            {tupleItems.map((item, idx) => (
+                                                <div key={idx} style={{ display: "flex", gap: "8px", marginBottom: "8px", alignItems: "center" }}>
+                                                    <div style={{ minWidth: "72px", color: "#555", fontSize: "12px", paddingTop: "4px" }}>Position {idx + 1}</div>
+                                                    <TextField
+                                                        size="small"
+                                                        select
+                                                        label="Type"
+                                                        value={item.type}
+                                                        onChange={e => handleChangeTupleItem(idx, "type", e.target.value)}
+                                                        variant="outlined"
+                                                        style={{ minWidth: "110px" }}
+                                                        SelectProps={{ native: true }}
+                                                    >
+                                                        {["string", "number", "integer", "boolean"].map(t => (
+                                                            <option key={t} value={t}>{t}</option>
+                                                        ))}
+                                                    </TextField>
+                                                    <TextField
+                                                        size="small"
+                                                        label="Title"
+                                                        value={item.title}
+                                                        onChange={e => handleChangeTupleItem(idx, "title", e.target.value)}
+                                                        variant="outlined"
+                                                        fullWidth
+                                                    />
+                                                    <IconButton size="small" onClick={() => handleRemoveTupleItem(idx)} style={{ flexShrink: 0 }}>
+                                                        <DeleteIcon fontSize="small" color="secondary" />
+                                                    </IconButton>
+                                                </div>
+                                            ))}
+                                            <Button size="small" variant="outlined" color="primary" onClick={handleAddTupleItem} style={{ marginTop: "4px" }}>
+                                                <AddIcon fontSize="small" style={{ marginRight: "4px" }} /> Add Position
+                                            </Button>
+                                        </div>
+                                    ) : null}
                                 </> : null}
                         </FormControl>
                     </div>

@@ -563,6 +563,7 @@ const ArrayType = ({ adamant_field_error, adamant_error_description, maxItems, m
         "title": field_label,
         "description": field_description,
         "items": field_items,
+        "prefixItems": field_prefixItems,
         "minItems": minItems,
         "maxItems": maxItems,
         "uniqueItems": uniqueItems,
@@ -838,7 +839,7 @@ const ArrayType = ({ adamant_field_error, adamant_error_description, maxItems, m
                                                                     <DragHandleIcon fontSize="small" />
                                                                 </Tooltip>
                                                             </div>
-                                                            <ArrayItemRenderer arrayFieldKey={field_key} withinObject={withinObject} value={value} pathSchema={pathSchema} pathFormData={pathFormData} dataInputItems={dataInputItems} oDataInputItems={oDataInputItems} oSetDataInputItems={oSetDataInputItems} setDataInputItems={setDataInputItems} field_label={field_label} field_items={inputItems.length !== 0 ? inputItems[index] : field_items} edit={true} handleDeleteArrayItem={handleDeleteArrayItem} path={path} fieldIndex={index} fieldkey={inputItems[index]["field_key"]} type={inputItems[index]["type"]} isResource = {field_key === 'resource'? true : false} />
+                                                            <ArrayItemRenderer arrayFieldKey={field_key} withinObject={withinObject} value={value} pathSchema={pathSchema} pathFormData={pathFormData} dataInputItems={dataInputItems} oDataInputItems={oDataInputItems} oSetDataInputItems={oSetDataInputItems} setDataInputItems={setDataInputItems} field_label={field_label} field_items={inputItems.length !== 0 ? inputItems[index] : field_items} edit={tupleSchemas !== undefined ? edit : true} handleDeleteArrayItem={handleDeleteArrayItem} path={path} fieldIndex={index} fieldkey={inputItems[index]["field_key"]} type={inputItems[index]["type"]} isResource={field_key === 'resource' ? true : false} isTupleItem={tupleSchemas !== undefined} />
                                                         </div>
                                                     </div>
                                                 )}

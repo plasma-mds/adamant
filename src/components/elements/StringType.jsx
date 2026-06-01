@@ -26,7 +26,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 
-const StringType = ({ adamant_field_error, adamant_error_description, minLength, maxLength, withinObject, field_uri, dataInputItems, setDataInputItems, withinArray, path, pathFormData, field_required, field_index, edit, field_key, field_label, field_description, field_enumerate, defaultValue, value }) => {
+const StringType = ({ adamant_field_error, adamant_error_description, minLength, maxLength, pattern, format, withinObject, field_uri, dataInputItems, setDataInputItems, withinArray, path, pathFormData, field_required, field_index, edit, field_key, field_label, field_description, field_enumerate, defaultValue, value }) => {
 
 
     //const [descriptionText, setDescriptionText] = useState(adamant_error_description !== undefined ? adamant_error_description : field_description !== undefined ? field_description : "");
@@ -71,10 +71,12 @@ const StringType = ({ adamant_field_error, adamant_error_description, minLength,
     // set stuff back to normal onFocus
     const handleOnFocus = () => {
         if (adamant_error_description !== undefined && adamant_field_error !== undefined) {
-            set(convertedSchema, path + ".adamant_error_description", (field_description !== undefined ? field_description : ""))
-            set(convertedSchema, path + ".adamant_field_error", false)
+            let cloned = JSON.parse(JSON.stringify(convertedSchema))
+            set(cloned, path + ".adamant_error_description", (field_description !== undefined ? field_description : ""))
+            set(cloned, path + ".adamant_field_error", false)
             setInputError(false)
             setDescriptionText(field_description !== undefined ? field_description : "")
+            updateParent(cloned)
         }
     }
 
@@ -131,6 +133,8 @@ const StringType = ({ adamant_field_error, adamant_error_description, minLength,
         "type": "string",
         "minLength": minLength,
         "maxLength": maxLength,
+        "pattern": pattern,
+        "format": format,
         "value": value,
     }
 

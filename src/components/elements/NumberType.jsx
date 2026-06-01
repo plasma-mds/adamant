@@ -25,7 +25,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 
-const NumberType = ({ adamant_error_description, adamant_field_error, minimum, maximum, field_uri, value, dataInputItems, setDataInputItems, withinArray, withinObject, path, pathFormData, defaultValue, field_required, field_index, edit, field_key, field_label, field_description, field_enumerate }) => {
+const NumberType = ({ adamant_error_description, adamant_field_error, minimum, maximum, exclusiveMinimum, exclusiveMaximum, multipleOf, field_uri, value, dataInputItems, setDataInputItems, withinArray, withinObject, path, pathFormData, defaultValue, field_required, field_index, edit, field_key, field_label, field_description, field_enumerate }) => {
     //const [descriptionText, setDescriptionText] = useState(field_description !== undefined ? field_description : "");
     const [descriptionText, setDescriptionText] = useState()
     const [openDialog, setOpenDialog] = useState(false);
@@ -92,7 +92,10 @@ const NumberType = ({ adamant_error_description, adamant_field_error, minimum, m
         "type": "number",
         "value": value,
         "minimum": minimum,
-        "maximum": maximum
+        "maximum": maximum,
+        "exclusiveMinimum": exclusiveMinimum,
+        "exclusiveMaximum": exclusiveMaximum,
+        "multipleOf": multipleOf
     }
 
     // handle delete field UI
@@ -323,10 +326,12 @@ const NumberType = ({ adamant_error_description, adamant_field_error, minimum, m
                 <div style={{ paddingTop: "10px", paddingBottom: "10px", display: 'inline-flex', width: '100%' }}>
                     <TextField size='small' onFocus={() => {
                         if (adamant_error_description !== undefined && adamant_field_error !== undefined) {
-                            set(convertedSchema, path + ".adamant_error_description", (field_description !== undefined ? field_description : ""))
-                            set(convertedSchema, path + ".adamant_field_error", false)
+                            let cloned = JSON.parse(JSON.stringify(convertedSchema))
+                            set(cloned, path + ".adamant_error_description", (field_description !== undefined ? field_description : ""))
+                            set(cloned, path + ".adamant_field_error", false)
                             setInputError(false)
                             setDescriptionText(field_description !== undefined ? field_description : "")
+                            updateParent(cloned)
                         }
 
                         if (inputError === true) {
@@ -375,10 +380,12 @@ const NumberType = ({ adamant_error_description, adamant_field_error, minimum, m
                     <TextField size='small'
                         onFocus={() => {
                             if (adamant_error_description !== undefined && adamant_field_error !== undefined) {
-                                set(convertedSchema, path + ".adamant_error_description", (field_description !== undefined ? field_description : ""))
-                                set(convertedSchema, path + ".adamant_field_error", false)
+                                let cloned = JSON.parse(JSON.stringify(convertedSchema))
+                                set(cloned, path + ".adamant_error_description", (field_description !== undefined ? field_description : ""))
+                                set(cloned, path + ".adamant_field_error", false)
                                 setInputError(false)
                                 setDescriptionText(field_description !== undefined ? field_description : "")
+                                updateParent(cloned)
                             }
                             if (inputError === true) {
                                 setInputValue("")

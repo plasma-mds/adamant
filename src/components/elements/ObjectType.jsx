@@ -214,11 +214,12 @@ const ObjectType = ({ adamant_error_description, adamant_field_error, dataInputI
     return (<>
         <div onClick={() => {
             if (adamant_error_description !== undefined && adamant_field_error !== undefined) {
-                set(convertedSchema, path + ".adamant_error_description", (field_description !== undefined ? field_description : ""))
-                set(convertedSchema, path + ".adamant_field_error", false)
+                let cloned = JSON.parse(JSON.stringify(convertedSchema))
+                set(cloned, path + ".adamant_error_description", (field_description !== undefined ? field_description : ""))
+                set(cloned, path + ".adamant_field_error", false)
                 setInputError(false)
                 setDescriptionText(field_description !== undefined ? field_description : "")
-                updateParent(convertedSchema)
+                updateParent(cloned)
             }
         }}
             style={{ width: "100%", padding: "10px 0px 10px 0px" }}>

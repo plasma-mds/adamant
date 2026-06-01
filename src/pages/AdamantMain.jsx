@@ -15,7 +15,7 @@ import DownloadIcon from "@material-ui/icons/GetApp";
 import set from "set-value";
 import getValue from "../components/utils/getValue";
 import CryptoJS from "crypto-js";
-import deleteKeySchema from "../components/utils/deleteKeySchema";
+import deleteKey from "../components/utils/deleteKey";
 import validateAgainstSchema from "../components/utils/validateAgainstSchema";
 import CreateELabFTWExperimentDialog from "../components/CreateELabFTWExperimentDialog";
 import { useEffect } from "react";
@@ -711,7 +711,7 @@ const AdamantMain = () => {
 
   // update parent (re-render everything)
   const updateParent = (value) => {
-    let newValue = { ...value };
+    let newValue = JSON.parse(JSON.stringify(value));
 
     if (newValue["$schema"] === "http://json-schema.org/draft-04/schema#") {
       changeKeywords(newValue, "$id", "id");
@@ -853,7 +853,7 @@ const AdamantMain = () => {
     console.log("path", path);
     console.log(jsonData);
     let jData = { ...jsonData };
-    let value = deleteKeySchema(jData, path);
+    let value = deleteKey(jData, path);
     setJsonData(value);
     console.log("Current form data:", value);
   };
@@ -877,7 +877,7 @@ const AdamantMain = () => {
     }
     if (defaultValue === undefined) {
       let jData = { ...jsonData };
-      jData = deleteKeySchema(jData, pathFormData);
+      jData = deleteKey(jData, pathFormData);
       setJsonData(jData);
       console.log("Current form data:", jData);
     } else {
@@ -888,7 +888,7 @@ const AdamantMain = () => {
       let jData = { ...jsonData };
       let value = getValue(jData, pathFormData);
       set(jData, newPathFormData, value);
-      jData = deleteKeySchema(jData, pathFormData);
+      jData = deleteKey(jData, pathFormData);
       setJsonData(jData);
       console.log("Current form data:", jData);
     }

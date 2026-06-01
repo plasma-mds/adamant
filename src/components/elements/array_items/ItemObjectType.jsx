@@ -7,6 +7,7 @@ import { AccordionDetails, AccordionSummary } from '@material-ui/core';
 import ExpandMoreIcon from "@material-ui/icons/ExpandMore";
 import { Button } from '@material-ui/core';
 import DeleteIcon from "@material-ui/icons/Delete";
+import InfoOutlinedIcon from "@material-ui/icons/InfoOutlined";
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import CheckBoxBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import FileIconx from "../../../assets/file-icon.svg"
@@ -15,7 +16,7 @@ import FileExtensionList from "../../../assets/mime-types-extensions-swapped.jso
 import Typography from '@material-ui/core/Typography';
 import { Tooltip } from "@material-ui/core";
 
-const ItemObjectType = ({ path, dataInputItems, setDataInputItems, field_label, pathFormData, field_required, field_items, field_type, edit, index, field_key, handleDeleteArrayItem, isResource }) => {
+const ItemObjectType = ({ path, dataInputItems, setDataInputItems, field_label, pathFormData, field_required, field_items, field_type, edit, index, field_key, handleDeleteArrayItem, isResource, isTupleItem }) => {
     const [expand, setExpand] = useState(dataInputItems[index]["adamant-ui-specific-expand"] === undefined ? true : dataInputItems[index]["adamant-ui-specific-expand"]); // set to "true" for normally open accordion
     const [useIcon, setUseIcon] = useState(false);
     const [mimeType, setMimeType] = useState("");
@@ -77,9 +78,14 @@ const ItemObjectType = ({ path, dataInputItems, setDataInputItems, field_label, 
                         <div>
 
                         </div>
-                        {edit ? <>
-                            <Button onClick={() => handleDeleteArrayItem(index)} style={{ marginLeft: "5px" }}><DeleteIcon color="secondary" /></Button>
-                        </> : null}
+                        {edit ? (isTupleItem ?
+                            <Tooltip placement="top" title="Tuple positions are fixed by the schema. To modify this position's type or label, use the pen icon in the tuple heading.">
+                                <span style={{ marginLeft: "5px", display: "inline-flex", alignItems: "center", color: "rgba(0, 0, 0, 0.38)", cursor: "default" }}>
+                                    <InfoOutlinedIcon fontSize="small" />
+                                </span>
+                            </Tooltip>
+                            : <Button onClick={() => handleDeleteArrayItem(index)} style={{ marginLeft: "5px" }}><DeleteIcon color="secondary" /></Button>
+                        ) : null}
                     </div>   
                 {/*
                     <div style={{ paddingTop: "10px", paddingBottom: "10px", display: 'inline-flex', width: '100%' }}>

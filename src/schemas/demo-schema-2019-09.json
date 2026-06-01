@@ -1,46 +1,86 @@
 {
     "$schema": "https://json-schema.org/draft/2019-09/schema",
     "$id": "http://scanning-electron-microscopy-2019-09",
-    "title": "Scanning Electron Microscopy 2019-09",
-    "description": "A schema demonstrating Draft/2019-09 features (unevaluatedProperties, dependentRequired, $defs, and items-array tuple)",
+    "title": "SEM Experiment — 2019-09",
+    "description": "Demo schema for JSON Schema Draft 2019-09. Highlights: '$defs' replaces 'definitions', $ref siblings are now honored, exclusiveMinimum/Maximum become standalone numbers (not boolean modifiers), 'dependencies' becomes 'dependentRequired', and 'unevaluatedProperties' is introduced. Tuple syntax still uses items-array (same as Draft-07).",
     "type": "object",
-    "required": ["DeviceModel", "SEMParameters"],
+    "required": ["DeviceModel", "Operator", "SEMParameters"],
     "unevaluatedProperties": false,
     "properties": {
         "DeviceModel": {
-            "title": "Model of SEM Device",
-            "description": "SEM device model used in the experiment",
-            "type": "string"
+            "title": "Device Model",
+            "description": "SEM device model used in the experiment.",
+            "type": "string",
+            "enum": ["FEI Quanta 650", "Zeiss Sigma 300", "Hitachi SU8230"]
+        },
+        "Operator": {
+            "title": "Operator Name",
+            "description": "Full name of the operator running the instrument.",
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 60
         },
         "SEMParameters": {
             "title": "SEM Parameters",
-            "description": "SEM parameters used in the experiment",
+            "description": "Acquisition parameters set on the instrument.",
             "type": "object",
+            "required": ["AccelerationVoltage"],
+            "unevaluatedProperties": false,
             "properties": {
                 "AccelerationVoltage": {
                     "$ref": "#/$defs/voltage",
                     "title": "Acceleration Voltage [kV]",
-                    "description": "Voltage applied to accelerate the electrons (sibling override)",
+                    "description": "2019-09: $ref and its sibling keywords are merged. Both this field's 'minimum: 10' AND the $defs/voltage constraints (minimum: 0, maximum: 30) are applied together. In Draft-07 the siblings would have been silently ignored.",
                     "type": "number",
                     "minimum": 10
                 },
-                "WorkingDistance": {
-                    "title": "Working Distance [mm]",
-                    "description": "Distance from the lens to the sample/specimen",
-                    "type": "number"
-                },
                 "ProbeCurrent": {
                     "title": "Probe Current [nA]",
-                    "description": "Electrical current focused on the specimen",
-                    "type": "number"
+                    "description": "2019-09 exclusive bound: 'exclusiveMinimum' is now a standalone numeric keyword (not a boolean). 'exclusiveMinimum: 0' means value must be strictly greater than 0. No companion 'minimum' needed.",
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                },
+                "BeamEnergy": {
+                    "title": "Beam Energy [eV]",
+                    "description": "2019-09 exclusive upper bound: 'exclusiveMaximum' is a standalone number. Value must be strictly less than 30000. 'multipleOf' constrains the value to increments of 100.",
+                    "type": "number",
+                    "minimum": 100,
+                    "exclusiveMaximum": 30000,
+                    "multipleOf": 100
+                },
+                "WorkingDistance": {
+                    "title": "Working Distance [mm]",
+                    "description": "Distance from the final lens pole piece to the specimen surface. Providing this field makes ProbeCurrent required (see 'dependentRequired' on the parent object).",
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 50
+                },
+                "ProbeDiameter": {
+                    "title": "Probe Diameter [nm]",
+                    "description": "Estimated diameter of the electron probe at the specimen surface. Plain inclusive minimum — contrast with ProbeCurrent which uses an exclusive minimum.",
+                    "type": "number",
+                    "minimum": 0
+                },
+                "DetectorMode": {
+                    "title": "Detector Mode",
+                    "description": "Secondary electron (SE), backscattered electron (BSE), or STEM detector mode.",
+                    "type": "string",
+                    "enum": ["SE", "BSE", "STEM"]
+                },
+                "SampleLabel": {
+                    "title": "Sample Label",
+                    "description": "Alphanumeric identifier for the sample. Pattern enforced via regex.",
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]+$"
                 },
                 "ScanSequence": {
                     "title": "Scan Sequence (Tuple)",
-                    "description": "Draft 2019-09 tuple using items-array",
+                    "description": "2019-09 tuple syntax: still uses 'items' as an array of schemas, same as Draft-07. Position 0 = dwell time, 1 = line count, 2 = direction. In 2020-12 this changes to 'prefixItems'.",
                     "type": "array",
                     "items": [
-                        { "type": "number", "title": "First pass time [s]" },
-                        { "type": "string", "title": "Operation type" }
+                        { "type": "number", "title": "Dwell time [µs]" },
+                        { "type": "integer", "title": "Line count" },
+                        { "type": "string", "title": "Scan direction" }
                     ]
                 }
             },
@@ -52,7 +92,8 @@
     "$defs": {
         "voltage": {
             "type": "number",
-            "minimum": 0
+            "minimum": 0,
+            "maximum": 30
         }
     }
 }

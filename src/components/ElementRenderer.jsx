@@ -5,11 +5,12 @@ import ObjectType from './elements/ObjectType';
 import IntegerType from './elements/IntegerType';
 import BooleanType from './elements/BooleanType';
 import ArrayType from './elements/ArrayType';
+import NullType from './elements/NullType';
 import AnyOfKeywordPlaceHolder from './elements/AnyOfKeywordPlaceHolder';
 import FileUpload from './elements/FileUpload';
 
 
-const ElementRenderer = ({withinObject, dataInputItems, setDataInputItems, withinArray, path, pathSchema, pathFormData, elementRequired, fieldkey, fieldIndex, edit, field: { minItems, maxItems, uniqueItems, minimum, maximum, minLength, maxLength, type, $id, id, title, contentEncoding, description, properties, required, enumerate, items, prefixItems, defaultValue, value, anyOf, adamant_field_error, adamant_error_description } }) => {
+const ElementRenderer = ({withinObject, dataInputItems, setDataInputItems, withinArray, path, pathSchema, pathFormData, elementRequired, fieldkey, fieldIndex, edit, field: { minItems, maxItems, uniqueItems, minimum, maximum, exclusiveMinimum, exclusiveMaximum, multipleOf, minLength, maxLength, pattern, format, type, $id, id, title, contentEncoding, description, properties, required, enumerate, items, prefixItems, defaultValue, value, anyOf, adamant_field_error, adamant_error_description } }) => {
 
     switch (type) {
         case 'string':
@@ -58,6 +59,8 @@ const ElementRenderer = ({withinObject, dataInputItems, setDataInputItems, withi
                     edit={edit}
                     minLength={minLength}
                     maxLength={maxLength}
+                    pattern={pattern}
+                    format={format}
                 />)
             }
         case 'number':
@@ -66,6 +69,9 @@ const ElementRenderer = ({withinObject, dataInputItems, setDataInputItems, withi
                 adamant_error_description={adamant_error_description}
                 minimum={minimum}
                 maximum={maximum}
+                exclusiveMinimum={exclusiveMinimum}
+                exclusiveMaximum={exclusiveMaximum}
+                multipleOf={multipleOf}
                 value={value}
                 withinArray={withinArray}
                 withinObject={withinObject}
@@ -90,6 +96,9 @@ const ElementRenderer = ({withinObject, dataInputItems, setDataInputItems, withi
                 adamant_error_description={adamant_error_description}
                 minimum={minimum}
                 maximum={maximum}
+                exclusiveMinimum={exclusiveMinimum}
+                exclusiveMaximum={exclusiveMaximum}
+                multipleOf={multipleOf}
                 value={value}
                 withinArray={withinArray}
                 withinObject={withinObject}
@@ -223,6 +232,22 @@ const ElementRenderer = ({withinObject, dataInputItems, setDataInputItems, withi
                     edit={edit}
                 />)
             }
+        case 'null':
+            return (<NullType
+                withinArray={withinArray}
+                withinObject={withinObject}
+                dataInputItems={dataInputItems}
+                setDataInputItems={setDataInputItems}
+                path={path + "." + fieldIndex}
+                pathFormData={pathFormData !== undefined ? pathFormData + "." + fieldkey : fieldkey}
+                field_key={fieldkey}
+                field_uri={$id !== undefined ? $id : id}
+                field_index={fieldIndex}
+                field_label={title}
+                field_description={description}
+                field_required={elementRequired}
+                edit={edit}
+            />)
         case undefined:
             if (anyOf) {
                 return (

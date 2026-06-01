@@ -46,6 +46,46 @@ const changeKeywords = (convertedSchema, oldKey, desiredNewKey) => {
     }
 }
 
+// Rename array-form items -> prefixItems (2020-12 tuple syntax).
+// Only renames when items is an array; single-schema items are left alone.
+const itemsToPrefixItems = (schema) => {
+    if (typeof schema !== 'object' || schema === null) return;
+    if (Array.isArray(schema)) {
+        schema.forEach(item => itemsToPrefixItems(item));
+        return;
+    }
+    if (Array.isArray(schema["items"])) {
+        schema["prefixItems"] = schema["items"];
+        delete schema["items"];
+    }
+    Object.values(schema).forEach(val => itemsToPrefixItems(val));
+};
+
+// Rename prefixItems -> items (2019-09/draft-07 tuple syntax).
+const prefixItemsToItems = (schema) => {
+    if (typeof schema !== 'object' || schema === null) return;
+    if (Array.isArray(schema)) {
+        schema.forEach(item => prefixItemsToItems(item));
+        return;
+    }
+    if (schema["prefixItems"] !== undefined) {
+        schema["items"] = schema["prefixItems"];
+        delete schema["prefixItems"];
+    }
+    Object.values(schema).forEach(val => prefixItemsToItems(val));
+};
+
+// Remove a keyword recursively from the entire schema tree.
+const removeKeyword = (schema, key) => {
+    if (typeof schema !== 'object' || schema === null) return;
+    if (Array.isArray(schema)) {
+        schema.forEach(item => removeKeyword(item, key));
+        return;
+    }
+    delete schema[key];
+    Object.values(schema).forEach(val => removeKeyword(val, key));
+};
+
 const EditSchemaHeader = ({ schemaVersion, title, description, schemaID, openDialog, setOpenDialog }) => {
 
     const [_schemaVersion, _setSchemaVersion] = useState(schemaVersion);
@@ -70,136 +110,146 @@ const EditSchemaHeader = ({ schemaVersion, title, description, schemaID, openDia
     const handleUpdateSchemaOnClick = () => {
         setSchemaSpecification(_schemaVersion)
 
-        if (_schemaVersion === undefined) {
-            delete convertedSchema["$schema"]
-        } else if (_schemaVersion.replace(/\s+/g, '') === "") {
-            delete convertedSchema["$schema"]
-        } else {
-            convertedSchema["$schema"] = _schemaVersion
-        };
+        let newSchema = JSON.parse(JSON.stringify(convertedSchema))
 
-        if (_schemaID === undefined) {
-            delete convertedSchema["id"]
-            delete convertedSchema["$id"]
-        } else if (_schemaID.replace(/\s+/g, '') === "") {
-            delete convertedSchema["id"]
-            delete convertedSchema["$id"]
+        if (_schemaVersion === undefined || _schemaVersion.replace(/\s+/g, '') === "") {
+            delete newSchema["$schema"]
         } else {
-            if (_schemaVersion === "http://json-schema.org/draft-04/schema#") {
-                Object.keys(convertedSchema).forEach(keyword => {
-                    if (keyword === "$id" & convertedSchema["$id"] !== undefined) {
-                        delete convertedSchema["$id"]
-                        convertedSchema["id"] = _schemaID
-                    }
-                    else if (keyword === "id" & convertedSchema["id"] !== undefined) {
-                        delete convertedSchema["id"]
-                        convertedSchema["$id"] = _schemaID
-                    }
-                    else if (convertedSchema["$id"] === undefined) {
-                        convertedSchema["id"] = _schemaID
-                    }  
-                    else {
-                        // to maintain the order
-                        let tempValue = convertedSchema[keyword]
-                        delete convertedSchema[keyword]
-                        convertedSchema[keyword] = tempValue
-                        //
-                    }
-                })
-            } else {
-                Object.keys(convertedSchema).forEach(keyword => {
-                    if (keyword === "id" & convertedSchema["id"] !== undefined) {
-                        delete convertedSchema["id"]
-                        convertedSchema["$id"] = _schemaID
-                    }
-                    else if (keyword === "$id" & convertedSchema["$id"] !== undefined) {
-                        delete convertedSchema["$id"]
-                        convertedSchema["id"] = _schemaID
-                    }
-                    else if (convertedSchema["id"] === undefined) {
-                        convertedSchema["$id"] = _schemaID
-                    }
-                    else {
-                        // to maintain the order
-                        let tempValue = convertedSchema[keyword]
-                        delete convertedSchema[keyword]
-                        convertedSchema[keyword] = tempValue
-                        //
-                    }
-                })
-            }
-        };
-
-        // change id/$id according to the selected schema version 
-        if (_schemaVersion !== "http://json-schema.org/draft-04/schema#") {
-            // change all id's to $id
-            changeKeywords(convertedSchema["properties"], "id", "$id")
-        } else {
-            //change all $id's to id
-            changeKeywords(convertedSchema["properties"], "$id", "id")
+            newSchema["$schema"] = _schemaVersion
         }
 
-        if (_title === undefined) {
-            delete convertedSchema["title"]
-        } else if (_title.replace(/\s+/g, '') === "") {
-            delete convertedSchema["title"]
+        if (_schemaID === undefined || _schemaID.replace(/\s+/g, '') === "") {
+            delete newSchema["id"]
+            delete newSchema["$id"]
         } else {
-            convertedSchema["title"] = _title
-        };
+            if (_schemaVersion === "http://json-schema.org/draft-04/schema#") {
+                // For draft-04: we want "id" key in the place of "$id" or "id" to maintain the order.
+                let orderedSchema = {};
+                Object.keys(newSchema).forEach(keyword => {
+                    if (keyword === "$id" || keyword === "id") {
+                        orderedSchema["id"] = _schemaID;
+                    } else {
+                        orderedSchema[keyword] = newSchema[keyword];
+                    }
+                });
+                if (orderedSchema["id"] === undefined) {
+                    orderedSchema["id"] = _schemaID;
+                }
+                newSchema = orderedSchema;
+            } else {
+                // For draft-07/2019-09/2020-12: we want "$id" key in the place of "$id" or "id" to maintain the order.
+                let orderedSchema = {};
+                Object.keys(newSchema).forEach(keyword => {
+                    if (keyword === "$id" || keyword === "id") {
+                        orderedSchema["$id"] = _schemaID;
+                    } else {
+                        orderedSchema[keyword] = newSchema[keyword];
+                    }
+                });
+                if (orderedSchema["$id"] === undefined) {
+                    orderedSchema["$id"] = _schemaID;
+                }
+                newSchema = orderedSchema;
+            }
+        }
 
-        if (_description === undefined) {
-            delete convertedSchema["description"]
-        } else if (_description.replace(/\s+/g, '') === "") {
-            delete convertedSchema["description"]
+        // Convert dialect-specific keywords when the specification version changes
+        const oldSpec = convertedSchema["$schema"] || "";
+        const newSpec = _schemaVersion || "";
+        const oldIsDraft07OrEarlier = oldSpec.includes("draft-07") || oldSpec.includes("draft-04");
+        const oldIs202012 = oldSpec.includes("2020-12");
+        const newIsDraft07OrEarlier = newSpec.includes("draft-07") || newSpec.includes("draft-04");
+        const newIs202012 = newSpec.includes("2020-12");
+
+        if (oldIsDraft07OrEarlier && !newIsDraft07OrEarlier) {
+            // draft-07 → 2019-09 or 2020-12: upgrade vocabulary
+            changeKeywords(newSchema, "definitions", "$defs");
+            changeKeywords(newSchema, "dependencies", "dependentRequired");
+        }
+        if (!oldIsDraft07OrEarlier && newIsDraft07OrEarlier) {
+            // 2019-09 or 2020-12 → draft-07: downgrade vocabulary
+            changeKeywords(newSchema, "$defs", "definitions");
+            changeKeywords(newSchema, "dependentRequired", "dependencies");
+            removeKeyword(newSchema, "unevaluatedProperties");
+        }
+        if (!oldIs202012 && newIs202012) {
+            // any → 2020-12: rename array-form items to prefixItems
+            itemsToPrefixItems(newSchema);
+        }
+        if (oldIs202012 && !newIs202012) {
+            // 2020-12 → any: rename prefixItems back to items
+            prefixItemsToItems(newSchema);
+        }
+
+        // change id/$id according to the selected schema version
+        if (_schemaVersion !== "http://json-schema.org/draft-04/schema#") {
+            // change all id's to $id
+            if (newSchema["properties"]) {
+                changeKeywords(newSchema["properties"], "id", "$id")
+            }
         } else {
-            convertedSchema["description"] = _description
-        };
+            //change all $id's to id
+            if (newSchema["properties"]) {
+                changeKeywords(newSchema["properties"], "$id", "id")
+            }
+        }
+
+        if (_title === undefined || _title.replace(/\s+/g, '') === "") {
+            delete newSchema["title"]
+        } else {
+            newSchema["title"] = _title
+        }
+
+        if (_description === undefined || _description.replace(/\s+/g, '') === "") {
+            delete newSchema["description"]
+        } else {
+            newSchema["description"] = _description
+        }
 
         // better ordering
         let emptyObject = {}
         let emptyArray = []
-        Object.keys(convertedSchema).forEach(keyword=>{
+        Object.keys(newSchema).forEach(keyword=>{
             emptyArray.push(keyword)
         })
         if (emptyArray.includes("$schema")) {
-             emptyObject["$schema"] = convertedSchema["$schema"]
+             emptyObject["$schema"] = newSchema["$schema"]
              emptyArray = emptyArray.filter(function(f) {return f !== "$schema"})
         }
         if (emptyArray.includes("$id")) {
-            emptyObject["$id"] = convertedSchema["$id"]
-            emptyArray = emptyArray.filter(function(f) {return f !== "$id"})
+             emptyObject["$id"] = newSchema["$id"]
+             emptyArray = emptyArray.filter(function(f) {return f !== "$id"})
         }
         if (emptyArray.includes("id")) {
-            emptyObject["id"] = convertedSchema["id"]
-            emptyArray = emptyArray.filter(function(f) {return f !== "id"})
+             emptyObject["id"] = newSchema["id"]
+             emptyArray = emptyArray.filter(function(f) {return f !== "id"})
         }
         if (emptyArray.includes("title")) {
-            emptyObject["title"] = convertedSchema["title"]
-            emptyArray = emptyArray.filter(function(f) {return f !== "title"})
+             emptyObject["title"] = newSchema["title"]
+             emptyArray = emptyArray.filter(function(f) {return f !== "title"})
         }
         if (emptyArray.includes("description")) {
-            emptyObject["description"] = convertedSchema["description"]
-            emptyArray = emptyArray.filter(function(f) {return f !== "description"})
+             emptyObject["description"] = newSchema["description"]
+             emptyArray = emptyArray.filter(function(f) {return f !== "description"})
         }
         if (emptyArray.includes("type")) {
-            emptyObject["type"] = convertedSchema["type"]
-            emptyArray = emptyArray.filter(function(f) {return f !== "type"})
+             emptyObject["type"] = newSchema["type"]
+             emptyArray = emptyArray.filter(function(f) {return f !== "type"})
         }
         if (emptyArray.includes("properties")){
-            emptyObject["properties"] = convertedSchema["properties"]
-            emptyArray = emptyArray.filter(function(f) {return f !== "properties"})
+             emptyObject["properties"] = newSchema["properties"]
+             emptyArray = emptyArray.filter(function(f) {return f !== "properties"})
         }
         if (emptyArray.includes("required")){
-            emptyObject["required"] = convertedSchema["required"]
-            emptyArray = emptyArray.filter(function(f) {return f !== "required"})
+             emptyObject["required"] = newSchema["required"]
+             emptyArray = emptyArray.filter(function(f) {return f !== "required"})
         }
 
         if (emptyArray.length !== 0) {
-            for (let i = 0; i<emptyArray.length; i++){
-                emptyObject[emptyArray[i]] = convertedSchema[emptyArray[i]]
-            }
+             for (let i = 0; i<emptyArray.length; i++){
+                 emptyObject[emptyArray[i]] = newSchema[emptyArray[i]]
+             }
         }
-
 
         updateParent(emptyObject)
         setOpenDialog(false)
