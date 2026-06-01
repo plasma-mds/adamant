@@ -1,44 +1,86 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "$id": "http://scanning-electron-microscopy-draft-07",
-    "title": "Scanning Electron Microscopy Draft-07",
-    "description": "A schema demonstrating Draft-07 features (dependencies, definitions, sibling ref constraint ignored, and items-array tuple)",
+    "title": "SEM Experiment — Draft-07",
+    "description": "Demo schema for JSON Schema Draft-07. Highlights: 'definitions' vocabulary, boolean exclusiveMinimum modifier, 'dependencies' keyword for conditional required, and items-array tuple syntax. $ref siblings are silently ignored in this draft.",
     "type": "object",
-    "required": ["DeviceModel", "SEMParameters"],
+    "required": ["DeviceModel", "Operator", "SEMParameters"],
     "properties": {
         "DeviceModel": {
-            "title": "Model of SEM Device",
-            "description": "SEM device model used in the experiment",
-            "type": "string"
+            "title": "Device Model",
+            "description": "SEM device model used in the experiment.",
+            "type": "string",
+            "enum": ["FEI Quanta 650", "Zeiss Sigma 300", "Hitachi SU8230"]
+        },
+        "Operator": {
+            "title": "Operator Name",
+            "description": "Full name of the operator running the instrument.",
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 60
         },
         "SEMParameters": {
             "title": "SEM Parameters",
-            "description": "SEM parameters used in the experiment",
+            "description": "Acquisition parameters set on the instrument.",
             "type": "object",
+            "required": ["AccelerationVoltage"],
             "properties": {
                 "AccelerationVoltage": {
                     "$ref": "#/definitions/voltage",
                     "title": "Acceleration Voltage [kV]",
-                    "description": "Voltage applied to accelerate the electrons (sibling override ignored in draft-07)",
+                    "description": "Draft-07: $ref is evaluated in isolation. Sibling keywords (type, minimum:10 here) are silently ignored — only the $defs/voltage schema is applied.",
+                    "type": "number",
                     "minimum": 10
-                },
-                "WorkingDistance": {
-                    "title": "Working Distance [mm]",
-                    "description": "Distance from the lens to the sample/specimen",
-                    "type": "number"
                 },
                 "ProbeCurrent": {
                     "title": "Probe Current [nA]",
-                    "description": "Electrical current focused on the specimen",
-                    "type": "number"
+                    "description": "Draft-07 exclusive bound: 'exclusiveMinimum' is a boolean modifier. It tightens the companion 'minimum' to a strict inequality. Value must be > 0 (not >= 0).",
+                    "type": "number",
+                    "minimum": 0,
+                    "exclusiveMinimum": true
+                },
+                "BeamEnergy": {
+                    "title": "Beam Energy [eV]",
+                    "description": "Draft-07 exclusive bound on the upper side: 'exclusiveMaximum: true' makes the companion 'maximum' strict. Value must be < 30000.",
+                    "type": "number",
+                    "minimum": 100,
+                    "maximum": 30000,
+                    "exclusiveMaximum": true,
+                    "multipleOf": 100
+                },
+                "WorkingDistance": {
+                    "title": "Working Distance [mm]",
+                    "description": "Distance from the final lens pole piece to the specimen surface. Providing this field makes ProbeCurrent required (see 'dependencies' on the parent object).",
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 50
+                },
+                "ProbeDiameter": {
+                    "title": "Probe Diameter [nm]",
+                    "description": "Estimated diameter of the electron probe at the specimen surface. Plain inclusive minimum — in Draft-07, omitting 'exclusiveMinimum' (or setting it to false) leaves 'minimum' inclusive by default.",
+                    "type": "number",
+                    "minimum": 0
+                },
+                "DetectorMode": {
+                    "title": "Detector Mode",
+                    "description": "Secondary electron (SE), backscattered electron (BSE), or STEM detector mode.",
+                    "type": "string",
+                    "enum": ["SE", "BSE", "STEM"]
+                },
+                "SampleLabel": {
+                    "title": "Sample Label",
+                    "description": "Alphanumeric identifier for the sample. Pattern enforced via regex.",
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]+$"
                 },
                 "ScanSequence": {
                     "title": "Scan Sequence (Tuple)",
-                    "description": "Draft-07 tuple using items-array",
+                    "description": "Draft-07 tuple syntax: 'items' accepts an array of schemas. Each array position is validated against its positional schema. Position 0 = dwell time, 1 = line count, 2 = direction.",
                     "type": "array",
                     "items": [
-                        { "type": "number", "title": "First pass time [s]" },
-                        { "type": "string", "title": "Operation type" }
+                        { "type": "number", "title": "Dwell time [µs]" },
+                        { "type": "integer", "title": "Line count" },
+                        { "type": "string", "title": "Scan direction" }
                     ]
                 }
             },
@@ -50,7 +92,8 @@
     "definitions": {
         "voltage": {
             "type": "number",
-            "minimum": 0
+            "minimum": 0,
+            "maximum": 30
         }
     }
 }
