@@ -72,7 +72,7 @@ Tests containers, lists, file loaders, and polymorphic switchers.
 * **Tested Components**:
   * `ObjectType.jsx`: Toggles visibility headers, invokes nested field creation dialogs, and manages drag-and-drop order updates.
   * `ArrayType.jsx` & `_ArrayType.jsx` & `ArrayItemRenderer.jsx`: Inserts default elements, removes items, reorders arrays via drag handles, and validates array size ranges against `minItems`/`maxItems`.
-  * `AnyOfKeyword.jsx` & `AnyOfKeywordPlaceHolder.jsx`: Switches sub-schemas when tabs are toggled.
+  * `AnyOfKeyword.jsx`: Switches sub-schemas when tabs are toggled.
   * `FileUpload.jsx` & `FileUpload2.jsx`: Validates files on drop (size, duplication, type checking), reads attachments as base64 URLs, and supports file resetting.
   * `ItemObjectType.jsx`: Renders nested object elements inside array loops inside expanding summary cards.
 

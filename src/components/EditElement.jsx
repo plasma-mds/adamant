@@ -1813,7 +1813,24 @@ const EditElement = ({ editOrAdd, field_uri, enumerated, field_enumerate, field_
                                                 helperText="Semantic format annotation for this string field."
                                                 SelectProps={{ native: true }}
                                             >
-                                                {["", "date-time", "date", "time", "email", "hostname", "ipv4", "ipv6", "uri", "uri-reference", "uuid", "json-pointer", "regex"].map(f => (
+                                                {[
+                                                    "",
+                                                    // Date / time
+                                                    "date-time", "date", "time", "duration",
+                                                    // Email
+                                                    "email", "idn-email",
+                                                    // Hostname
+                                                    "hostname", "idn-hostname",
+                                                    // IP
+                                                    "ipv4", "ipv6",
+                                                    // Resource identifiers
+                                                    "uri", "uri-reference", "iri", "iri-reference",
+                                                    "uuid", "uri-template",
+                                                    // Pointers
+                                                    "json-pointer", "relative-json-pointer",
+                                                    // Regex
+                                                    "regex",
+                                                ].map(f => (
                                                     <option key={f} value={f}>{f || "— none —"}</option>
                                                 ))}
                                             </TextField>

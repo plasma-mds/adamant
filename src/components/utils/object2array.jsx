@@ -51,6 +51,21 @@ const object2array = (propert, rootSchema) => {
                 }
             });
         }
+        // Resolve $refs inside anyOf/oneOf/allOf sub-schemas into plain schema objects.
+        ['anyOf', 'oneOf', 'allOf'].forEach(compositeKey => {
+            if (Array.isArray(tempVariable[compositeKey])) {
+                tempVariable[compositeKey] = tempVariable[compositeKey].map(subSchema => {
+                    if (subSchema && subSchema['$ref'] && activeSchema) {
+                        const resolved = resolveRef(subSchema['$ref'], activeSchema);
+                        if (resolved) {
+                            return { ...resolved, ...subSchema };
+                        }
+                    }
+                    return subSchema;
+                });
+            }
+        });
+
         someArray.push(tempVariable);
     });
 

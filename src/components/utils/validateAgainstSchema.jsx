@@ -8,8 +8,24 @@ import Ajv from "ajv";
 import Ajv04 from "ajv-draft-04";
 import Ajv2019 from "ajv/dist/2019";
 import Ajv2020 from "ajv/dist/2020";
+import addFormats from "ajv-formats";
 import deleteKeySchema from "./deleteKeySchema";
 import getValueInSchemaFullPath from "./getValueInSchemaFullPath";
+
+const makeAjv = (AjvClass, options) => {
+    const ajv = new AjvClass({ allErrors: true, strict: false, ...options });
+    addFormats(ajv);
+    return ajv;
+};
+
+// Dialects in priority order: the first whose `match` substring is found in
+// $schema is used both to normalize $schema and to pick the Ajv class.
+export const DIALECTS = [
+    { match: "2020-12", schemaUri: "https://json-schema.org/draft/2020-12/schema", AjvClass: Ajv2020, options: { strict: false } },
+    { match: "2019-09", schemaUri: "https://json-schema.org/draft/2019-09/schema", AjvClass: Ajv2019, options: { strict: false } },
+    { match: "draft-07", schemaUri: "http://json-schema.org/draft-07/schema#", AjvClass: Ajv },
+    { match: "draft-04", schemaUri: "http://json-schema.org/draft-04/schema#", AjvClass: Ajv04, options: { schemaId: "id" } },
+];
 
 const messageLookUpTable = (field_label, field_type, keyword, message) => {
     switch (keyword) {
@@ -52,10 +68,8 @@ const createBetterValidationMessages = (validate, schema) => {
             path.push(error.params.missingProperty)
         }
         path = path.join(".")
-        console.log(path)
 
         let field = getValueInSchemaFullPath(schema, path)
-        console.log(field)
         if (!field) {
             messages.push({ "path": path, "field_label": "Schema", "message": error.message })
             return
@@ -76,78 +90,27 @@ const createBetterValidationMessages = (validate, schema) => {
 const validateAgainstSchema = (formData, schema) => {
     try {
         let localSchema = JSON.parse(JSON.stringify(schema));
-        if (localSchema["$schema"] !== undefined) {
-            if (localSchema["$schema"].includes("2020-12")) {
-                localSchema["$schema"] = "https://json-schema.org/draft/2020-12/schema";
-            } else if (localSchema["$schema"].includes("2019-09")) {
-                localSchema["$schema"] = "https://json-schema.org/draft/2019-09/schema";
-            } else if (localSchema["$schema"].includes("draft-07")) {
-                localSchema["$schema"] = "http://json-schema.org/draft-07/schema#";
-            } else if (localSchema["$schema"].includes("draft-04")) {
-                localSchema["$schema"] = "http://json-schema.org/draft-04/schema#";
-            }
-        }
 
-        if (localSchema["$schema"] !== undefined) {
-            if (localSchema["$schema"].includes("2020-12")) {
-                console.log("draft-2020-12 is detected")
-                const ajv = new Ajv2020({ allErrors: true, strict: false });
+        const schemaVersion = localSchema["$schema"];
+        const dialect = schemaVersion && DIALECTS.find(d => schemaVersion.includes(d.match));
 
-                const validate = ajv.compile(localSchema);
-                const valid = validate(formData)
-
-                let messages = createBetterValidationMessages(validate, schema)
-                return [valid, messages];
-            } else if (localSchema["$schema"].includes("2019-09")) {
-                console.log("draft-2019-09 is detected")
-                const ajv = new Ajv2019({ allErrors: true, strict: false });
-
-                const validate = ajv.compile(localSchema);
-                const valid = validate(formData)
-
-                let messages = createBetterValidationMessages(validate, schema)
-                return [valid, messages];
-            } else if (localSchema["$schema"].includes("draft-04")) {
-                console.log("draft-04 is detected")
-                const ajv = new Ajv04({ schemaId: "id", allErrors: true });
-
-                const validate = ajv.compile(localSchema);
-                const valid = validate(formData)
-
-                let messages = createBetterValidationMessages(validate, schema)
-                return [valid, messages];
-            } else {
-                const ajv = new Ajv({ allErrors: true, strict: false });
-
-                const validate = ajv.compile(localSchema);
-                const valid = validate(formData)
-
-                let messages = createBetterValidationMessages(validate, schema)
-                return [valid, messages];
-            }
-        } else if (localSchema["schema"] !== undefined) {
-            const ajv = new Ajv({ allErrors: true });
-            const validate = ajv.compile(localSchema);
-            const valid = validate(formData)
-
-            let messages = createBetterValidationMessages(validate, schema)
-            return [valid, messages];
+        let ajv;
+        if (dialect) {
+            localSchema["$schema"] = dialect.schemaUri;
+            ajv = makeAjv(dialect.AjvClass, dialect.options);
+        } else if (schemaVersion !== undefined || localSchema["schema"] !== undefined) {
+            ajv = makeAjv(Ajv);
         } else {
-            const ajv = new Ajv({ allErrors: true });
-            if (localSchema["$schema"] !== undefined) {
-                localSchema = deleteKeySchema(localSchema, "$schema")
-            }
             if (localSchema["id"] !== undefined) {
                 localSchema = deleteKeySchema(localSchema, "id")
             }
-
-
-            const validate = ajv.compile(localSchema);
-            const valid = validate(formData)
-
-            let messages = createBetterValidationMessages(validate, schema)
-            return [valid, messages];
+            ajv = makeAjv(Ajv);
         }
+
+        const validate = ajv.compile(localSchema);
+        const valid = validate(formData)
+        const messages = createBetterValidationMessages(validate, schema)
+        return [valid, messages];
     } catch (error) {
         console.error("Schema compilation error:", error);
         let errorMessage = error.toString();
@@ -158,7 +121,7 @@ const validateAgainstSchema = (formData, schema) => {
                 {
                     path: "schema",
                     field_label: "Schema Specification",
-                    message: `Schema compilation failed: ${errorMessage}. This usually happens when the selected schema specification version (dialect) does not support keywords present in the schema (e.g. 'prefixItems' in draft-07, or 'dependentRequired' in draft-07).`
+                    message: `Schema compilation failed: ${errorMessage}. This usually means the schema uses keywords unsupported by the selected specification version (dialect).`
                 }
             ]
         ];

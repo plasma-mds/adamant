@@ -13,6 +13,7 @@ import set from 'set-value';
 import { FileIcon, defaultStyles } from 'react-file-icon';
 import mimeTypesExt from '../../assets/mime-types-extensions-swapped.json'
 import semOperatorDeviceList from "../../assets/sem-operator-device-list.json"
+import isFieldRequired from '../utils/isFieldRequired'
 
 
 const useStyles = makeStyles((theme) => ({
@@ -26,17 +27,38 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 
+// Maps JSON Schema string formats to HTML input types and placeholders.
+const FORMAT_CONFIG = {
+    'date-time':            { type: 'datetime-local', placeholder: '',                          shrink: true  },
+    'date':                 { type: 'date',            placeholder: '',                          shrink: true  },
+    'time':                 { type: 'time',            placeholder: '',                          shrink: true  },
+    'duration':             { type: 'text',            placeholder: 'P1Y2M3DT4H5M6S',           shrink: false },
+    'email':                { type: 'email',           placeholder: 'user@example.com',          shrink: false },
+    'idn-email':            { type: 'email',           placeholder: 'user@例え.jp',              shrink: false },
+    'hostname':             { type: 'text',            placeholder: 'example.com',               shrink: false },
+    'idn-hostname':         { type: 'text',            placeholder: '例え.jp',                   shrink: false },
+    'ipv4':                 { type: 'text',            placeholder: '192.168.0.1',               shrink: false },
+    'ipv6':                 { type: 'text',            placeholder: '2001:db8::1',               shrink: false },
+    'uri':                  { type: 'url',             placeholder: 'https://example.com/',      shrink: false },
+    'uri-reference':        { type: 'url',             placeholder: 'https://example.com/path',  shrink: false },
+    'iri':                  { type: 'url',             placeholder: 'https://例え.jp/',           shrink: false },
+    'iri-reference':        { type: 'url',             placeholder: 'https://例え.jp/path',       shrink: false },
+    'uuid':                 { type: 'text',            placeholder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', shrink: false },
+    'uri-template':         { type: 'text',            placeholder: 'https://example.com/{+path}', shrink: false },
+    'json-pointer':         { type: 'text',            placeholder: '/foo/0/bar',                shrink: false },
+    'relative-json-pointer':{ type: 'text',            placeholder: '1/0',                       shrink: false },
+    'regex':                { type: 'text',            placeholder: '^[A-Za-z]+$',               shrink: false },
+};
+
 const StringType = ({ adamant_field_error, adamant_error_description, minLength, maxLength, pattern, format, withinObject, field_uri, dataInputItems, setDataInputItems, withinArray, path, pathFormData, field_required, field_index, edit, field_key, field_label, field_description, field_enumerate, defaultValue, value }) => {
 
 
-    //const [descriptionText, setDescriptionText] = useState(adamant_error_description !== undefined ? adamant_error_description : field_description !== undefined ? field_description : "");
     const [descriptionText, setDescriptionText] = useState()
     const [inputError, setInputError] = useState(adamant_field_error !== undefined ? adamant_field_error : false);
     const [openDialog, setOpenDialog] = useState(false);
     const { updateParent, convertedSchema, handleDataDelete, handleConvertedDataInput, SEMSelectedDevice, setSEMSelectedDevice } = useContext(FormContext);
     const [fieldValue, setFieldValue] = useState(defaultValue !== undefined ? defaultValue : value !== undefined ? value : "")
     const [fieldEnumerate, setFieldEnumerate] = useState()
-    //const [required, setRequired] = useState(false)
     const classes = useStyles();
 
     // update description text state as soon as new field description is obtained
@@ -110,19 +132,7 @@ const StringType = ({ adamant_field_error, adamant_error_description, minLength,
     pathFormData = pathFormData.join(".")
 
 
-    var required
-    if (field_required === undefined) {
-        required = false;
-    } else if (field_required.includes(field_key)) {
-        required = true;
-    };
-
-    var enumerated
-    if (field_enumerate === undefined) {
-        enumerated = false;
-    } else {
-        enumerated = true;
-    }
+    const required = isFieldRequired(field_required, field_key);
 
     // construct UI schema
     let UISchema = {
@@ -277,11 +287,13 @@ const StringType = ({ adamant_field_error, adamant_error_description, minLength,
 
     }, [value])
 
-    if (fieldEnumerate !== undefined) {
+    const effectiveEnumerate = fieldEnumerate ?? field_enumerate;
+
+    if (effectiveEnumerate !== undefined) {
         return (
             <>
                 <div style={{ paddingTop: "10px", paddingBottom: "10px", display: 'inline-flex', width: '100%' }}>
-                    < TextField
+                    <TextField
                         onFocus={() => { handleOnFocus() }}
                         error={inputError}
                         onBlur={(event) => handleOnBlur(event, pathFormData, "string")}
@@ -293,21 +305,14 @@ const StringType = ({ adamant_field_error, adamant_error_description, minLength,
                         id={field_key}
                         label={field_label}
                         variant="outlined"
-                        SelectProps={{
-                            native: true,
-                        }
-                        }
+                        SelectProps={{ native: true }}
                         helperText={descriptionText}
                         value={fieldValue === undefined ? defaultValue : fieldValue}
                     >
-                        {
-                            fieldEnumerate.map((content, index) => (
-                                <option key={index} value={content}>
-                                    {content}
-                                </option>
-                            ))
-                        }
-                    </TextField >
+                        {effectiveEnumerate.map((content, index) => (
+                            <option key={index} value={content}>{content}</option>
+                        ))}
+                    </TextField>
                     {edit ? <>
                         <Tooltip placement="top" title={`Edit field "${field_label}"`}>
                             <IconButton onClick={() => setOpenDialog(true)} style={{ marginLeft: "5px", marginTop: "5px", height: "45px" }}>
@@ -320,94 +325,49 @@ const StringType = ({ adamant_field_error, adamant_error_description, minLength,
                             </IconButton>
                         </Tooltip>
                     </> : null}
-                </div >
-                {openDialog ? <EditElement field_uri={field_uri} pathFormData={pathFormData} enumerated={true} defaultValue={defaultValue} field_enumerate={fieldEnumerate} field_key={field_key} field_index={field_index} openDialog={openDialog} setOpenDialog={setOpenDialog} path={path} UISchema={UISchema} field_required={required} /> : null}
+                </div>
+                {openDialog ? <EditElement field_uri={field_uri} pathFormData={pathFormData} enumerated={true} defaultValue={defaultValue} field_enumerate={effectiveEnumerate} field_key={field_key} field_index={field_index} openDialog={openDialog} setOpenDialog={setOpenDialog} path={path} UISchema={UISchema} field_required={required} /> : null}
             </>
         )
     } else {
-        if (field_enumerate === undefined) {
-            return (
-                <>
-                    <div style={{ paddingTop: "10px", paddingBottom: "10px", display: 'inline-flex', width: '100%' }}>
-                        <TextField
-                            size='small'
-                            onFocus={() => { handleOnFocus() }}
-                            error={inputError}
-                            multiline
-                            disabled={["filetype", "fileName", "hash", "hashAlgorithm"].includes(field_key) ? true : false}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter" && !(e.shiftKey)) {
-                                    e.preventDefault();
-                                    //setFieldValue(e.target.value);
-                                }
-                            }}
-                            onBlur={(event) => handleOnBlur(event, pathFormData, "string")} required={required} helperText={descriptionText} onChange={(event) => { handleOnChange(event) }} value={fieldValue} fullWidth={true} className={classes.heading} id={field_key} label={field_label} variant="outlined" />
-                        {field_key === "filetype" && mimeTypesExt[fieldValue] !== undefined ? <div style={{ "width": "50px", "paddingLeft": "5px" }}><FileIcon extension={mimeTypesExt[fieldValue].substring(1)} {...defaultStyles[mimeTypesExt[fieldValue].substring(1)]} /></div> : null}
-                        {edit ? <>
-                            <Tooltip placement="top" title={`Edit field "${field_label}"`}>
-                                <IconButton onClick={() => setOpenDialog(true)} style={{ marginLeft: "5px", marginTop: "5px", height: "45px" }}>
-                                    <EditIcon fontSize="small" color="primary" />
-                                </IconButton>
-                            </Tooltip>
-                            <Tooltip placement="top" title={`Remove field "${field_label}"`}>
-                                <IconButton onClick={() => handleDeleteElement()} style={{ marginLeft: "5px", marginTop: "5px", height: "45px" }}>
-                                    <DeleteIcon fontSize="small" color="secondary" />
-                                </IconButton>
-                            </Tooltip>
-                        </> : null}
-                    </div>
-                    {openDialog ? <EditElement field_uri={field_uri} pathFormData={pathFormData} defaultValue={defaultValue} enumerated={enumerated} field_enumerate={field_enumerate} field_key={field_key} field_index={field_index} openDialog={openDialog} setOpenDialog={setOpenDialog} path={path} UISchema={UISchema} field_required={required} /> : null}
-                </>
-            )
-        } else {
-            return (
-                <>
-                    <div style={{ paddingTop: "10px", paddingBottom: "10px", display: 'inline-flex', width: '100%' }}>
-                        <TextField
-                            size='small'
-                            onFocus={() => { handleOnFocus() }}
-                            error={inputError}
-                            onBlur={(event) => handleOnBlur(event, pathFormData, "string")}
-                            onChange={event => handleOnChange(event)}
-                            required={required}
-                            select
-                            fullWidth={true}
-                            className={classes.heading}
-                            id={field_key}
-                            label={field_label}
-                            variant="outlined"
-                            SelectProps={{
-                                native: true,
+        const fmtCfg = FORMAT_CONFIG[format] || null;
+        const inputType = fmtCfg ? fmtCfg.type : 'text';
+        const useNativeType = fmtCfg !== null;
+        return (
+            <>
+                <div style={{ paddingTop: "10px", paddingBottom: "10px", display: 'inline-flex', width: '100%' }}>
+                    <TextField
+                        size='small'
+                        onFocus={() => { handleOnFocus() }}
+                        error={inputError}
+                        multiline={!useNativeType}
+                        type={useNativeType ? inputType : undefined}
+                        inputProps={fmtCfg && fmtCfg.placeholder ? { placeholder: fmtCfg.placeholder } : undefined}
+                        InputLabelProps={fmtCfg && fmtCfg.shrink ? { shrink: true } : undefined}
+                        disabled={["filetype", "fileName", "hash", "hashAlgorithm"].includes(field_key) ? true : false}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter" && !(e.shiftKey) && !useNativeType) {
+                                e.preventDefault();
                             }
-                            }
-                            helperText={descriptionText}
-                            value={fieldValue === undefined ? defaultValue : fieldValue}
-                        >
-                            {
-                                field_enumerate.map((content, index) => (
-                                    <option key={index} value={content}>
-                                        {content}
-                                    </option>
-                                ))
-                            }
-                        </TextField >
-                        {edit ? <>
-                            <Tooltip placement="top" title={`Edit field "${field_label}"`}>
-                                <IconButton onClick={() => setOpenDialog(true)} style={{ marginLeft: "5px", marginTop: "5px", height: "45px" }}>
-                                    <EditIcon fontSize="small" color="primary" />
-                                </IconButton>
-                            </Tooltip>
-                            <Tooltip placement="top" title={`Remove field "${field_label}"`}>
-                                <IconButton onClick={() => handleDeleteElement()} style={{ marginLeft: "5px", marginTop: "5px", height: "45px" }}>
-                                    <DeleteIcon fontSize="small" color="secondary" />
-                                </IconButton>
-                            </Tooltip>
-                        </> : null}
-                    </div >
-                    {openDialog ? <EditElement field_uri={field_uri} pathFormData={pathFormData} enumerated={enumerated} defaultValue={defaultValue} field_enumerate={field_enumerate} field_key={field_key} field_index={field_index} openDialog={openDialog} setOpenDialog={setOpenDialog} path={path} UISchema={UISchema} field_required={required} /> : null}
-                </>
-            )
-        }
+                        }}
+                        onBlur={(event) => handleOnBlur(event, pathFormData, "string")} required={required} helperText={descriptionText} onChange={(event) => { handleOnChange(event) }} value={fieldValue} fullWidth={true} className={classes.heading} id={field_key} label={field_label} variant="outlined" />
+                    {field_key === "filetype" && mimeTypesExt[fieldValue] !== undefined ? <div style={{ "width": "50px", "paddingLeft": "5px" }}><FileIcon extension={mimeTypesExt[fieldValue].substring(1)} {...defaultStyles[mimeTypesExt[fieldValue].substring(1)]} /></div> : null}
+                    {edit ? <>
+                        <Tooltip placement="top" title={`Edit field "${field_label}"`}>
+                            <IconButton onClick={() => setOpenDialog(true)} style={{ marginLeft: "5px", marginTop: "5px", height: "45px" }}>
+                                <EditIcon fontSize="small" color="primary" />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip placement="top" title={`Remove field "${field_label}"`}>
+                            <IconButton onClick={() => handleDeleteElement()} style={{ marginLeft: "5px", marginTop: "5px", height: "45px" }}>
+                                <DeleteIcon fontSize="small" color="secondary" />
+                            </IconButton>
+                        </Tooltip>
+                    </> : null}
+                </div>
+                {openDialog ? <EditElement field_uri={field_uri} pathFormData={pathFormData} defaultValue={defaultValue} enumerated={false} field_enumerate={field_enumerate} field_key={field_key} field_index={field_index} openDialog={openDialog} setOpenDialog={setOpenDialog} path={path} UISchema={UISchema} field_required={required} /> : null}
+            </>
+        )
     }
 };
 

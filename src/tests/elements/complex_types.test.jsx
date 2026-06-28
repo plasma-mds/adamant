@@ -5,7 +5,6 @@ import { FormContext } from '../../FormContext';
 import ObjectType from '../../components/elements/ObjectType';
 import ArrayType from '../../components/elements/ArrayType';
 import FileUpload from '../../components/elements/FileUpload';
-import AnyOfKeywordPlaceHolder from '../../components/elements/AnyOfKeywordPlaceHolder';
 import ItemObjectType from '../../components/elements/array_items/ItemObjectType';
 
 // Helper to render component wrapped in FormContext Provider
@@ -150,24 +149,6 @@ describe('Complex Input Elements', () => {
         'properties.document.value',
         'boolean'
       );
-    });
-  });
-
-  describe('AnyOfKeywordPlaceHolder Component', () => {
-    it('displays placeholder text when anyOf schema is evaluated', () => {
-      renderWithProvider(
-        <AnyOfKeywordPlaceHolder
-          field_label="Polymorphic Entry"
-          field_description="Can be string or number"
-          field_key="polyEntry"
-          path="properties.polyEntry"
-          pathFormData="polyEntry"
-          anyOf_list={[{ type: 'string' }, { type: 'number' }]}
-        />
-      );
-
-      expect(screen.getByText('Polymorphic Entry:')).toBeInTheDocument();
-      expect(screen.getByText(/"AnyOf" keyword is not yet implemented./i)).toBeInTheDocument();
     });
   });
 

@@ -148,6 +148,100 @@ describe('Dialogue and Modal Components', () => {
       );
       expect(setOpenDialogMock).toHaveBeenCalledWith(false);
     });
+
+    it('correctly swaps ID key and properties when converting dialects from draft-07 to draft-04', () => {
+      const setOpenDialogMock = vi.fn();
+      const convertedSchemaMock = {
+        $schema: "http://json-schema.org/draft-07/schema#",
+        $id: "orig-id",
+        title: 'Original Title',
+        description: 'Original Desc',
+        properties: [
+          { fieldKey: "testField", type: "string", id: "test-id" }
+        ]
+      };
+
+      const { contextValue } = renderWithProvider(
+        <EditSchemaHeader
+          openDialog={true}
+          setOpenDialog={setOpenDialogMock}
+          title="Original Title"
+          description="Original Desc"
+          schemaVersion="http://json-schema.org/draft-07/schema#"
+          schemaID="orig-id"
+        />,
+        {
+          convertedSchema: convertedSchemaMock,
+        }
+      );
+
+      const versionSelect = screen.getByRole('combobox');
+      fireEvent.change(versionSelect, { target: { value: 'http://json-schema.org/draft-04/schema#' } });
+
+      const saveBtn = screen.getByRole('button', { name: /Save/i });
+      fireEvent.click(saveBtn);
+
+      expect(contextValue.updateParent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          $schema: 'http://json-schema.org/draft-04/schema#',
+          id: 'orig-id',
+          properties: [
+            expect.objectContaining({
+              fieldKey: "testField",
+              id: "test-id"
+            })
+          ]
+        })
+      );
+      expect(contextValue.updateParent.mock.calls[0][0].$id).toBeUndefined();
+    });
+
+    it('correctly swaps ID key and properties when converting dialects from draft-04 to draft-07', () => {
+      const setOpenDialogMock = vi.fn();
+      const convertedSchemaMock = {
+        $schema: "http://json-schema.org/draft-04/schema#",
+        id: "orig-id",
+        title: 'Original Title',
+        description: 'Original Desc',
+        properties: [
+          { fieldKey: "testField", type: "string", id: "test-id" }
+        ]
+      };
+
+      const { contextValue } = renderWithProvider(
+        <EditSchemaHeader
+          openDialog={true}
+          setOpenDialog={setOpenDialogMock}
+          title="Original Title"
+          description="Original Desc"
+          schemaVersion="http://json-schema.org/draft-04/schema#"
+          schemaID="orig-id"
+        />,
+        {
+          convertedSchema: convertedSchemaMock,
+        }
+      );
+
+      const versionSelect = screen.getByRole('combobox');
+      fireEvent.change(versionSelect, { target: { value: 'http://json-schema.org/draft-07/schema#' } });
+
+      const saveBtn = screen.getByRole('button', { name: /Save/i });
+      fireEvent.click(saveBtn);
+
+      expect(contextValue.updateParent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          $schema: 'http://json-schema.org/draft-07/schema#',
+          $id: 'orig-id',
+          properties: [
+            expect.objectContaining({
+              fieldKey: "testField",
+              $id: "test-id"
+            })
+          ]
+        })
+      );
+      expect(contextValue.updateParent.mock.calls[0][0].id).toBeUndefined();
+    });
   });
 
   describe('LDAPLoginDialog Component', () => {

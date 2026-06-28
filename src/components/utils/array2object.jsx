@@ -1,4 +1,9 @@
 // convert iterable array to json schema properties
+import renameKey from "./renameKey";
+
+// fields that hold UI/runtime state and are not valid schema keywords
+const REMOVED_KEYS = ["value", "prevValue", "adamant_field_error", "adamant_error_description"];
+
 const array2object = (propert) => {
     var someObject = {};
     propert.forEach((item) => {
@@ -7,20 +12,11 @@ const array2object = (propert) => {
         const tempElements = item;
         someObject[tempKey] = tempElements;
         Object.keys(tempElements).forEach((item) => {
-            // change "enumerate" to "enum"
             if (item === "enumerate") {
-                const enumContent = JSON.parse(
-                    JSON.stringify(someObject[tempKey]["enumerate"])
-                );
-                delete someObject[tempKey]["enumerate"];
-                someObject[tempKey]["enum"] = enumContent;
+                renameKey(someObject[tempKey], "enumerate", "enum");
             }
             if (item === "defaultValue") {
-                const enumContent = JSON.parse(
-                    JSON.stringify(someObject[tempKey]["defaultValue"])
-                );
-                delete someObject[tempKey]["defaultValue"];
-                someObject[tempKey]["default"] = enumContent;
+                renameKey(someObject[tempKey], "defaultValue", "default");
             }
             if (item === "properties") {
                 // some recursion
@@ -28,19 +24,8 @@ const array2object = (propert) => {
                     someObject[tempKey]["properties"]
                 );
             }
-
-            // delete keywords that are not supposed to be in the schema
-            if (item === "value") {
-                delete someObject[tempKey]["value"]
-            }
-            if (item === "prevValue") {
-                delete someObject[tempKey][item]
-            }
-            if (item === "adamant_field_error") {
-                delete someObject[tempKey][item]
-            }
-            if (item === "adamant_error_description") {
-                delete someObject[tempKey][item]
+            if (REMOVED_KEYS.includes(item)) {
+                delete someObject[tempKey][item];
             }
         });
     });
