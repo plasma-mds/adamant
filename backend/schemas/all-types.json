@@ -60,7 +60,8 @@
         "dateType":{
             "title": "Date Type Field",
             "description": "Date Type Field",
-            "type": "date"
+            "type": "string",
+            "format": "date"
         },
         "arrayTypeEmpty": {
             "title": "Array Type Field (empty)",
@@ -112,6 +113,12 @@
                   "title": "arrayTypeObject_integer",
                   "description": "arrayTypeObject_integer",
                   "type": "integer"
+                },
+              "arrayTypeObject_date":
+                {
+                  "title": "arrayTypeObject_date",
+                  "description": "array of dates",
+                  "type": "date"                  
                 }
               }
             }
