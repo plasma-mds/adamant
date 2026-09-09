@@ -2,7 +2,7 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "$id": "http://scanning-electron-microscopy-draft-07",
     "title": "SEM Experiment — Draft-07",
-    "description": "Demo schema for JSON Schema Draft-07. Highlights: 'definitions' vocabulary, boolean exclusiveMinimum modifier, 'dependencies' keyword for conditional required, and items-array tuple syntax. $ref siblings are silently ignored in this draft.",
+    "description": "Demo schema for JSON Schema Draft-07. Highlights: 'definitions' vocabulary, 'dependencies' keyword for conditional required, and items-array tuple syntax. $ref siblings are silently ignored in this draft. (exclusiveMinimum/exclusiveMaximum are standalone numbers here too -- the boolean modifier form was removed in Draft-06.)",
     "type": "object",
     "required": ["DeviceModel", "Operator", "SEMParameters"],
     "properties": {
@@ -34,18 +34,16 @@
                 },
                 "ProbeCurrent": {
                     "title": "Probe Current [nA]",
-                    "description": "Draft-07 exclusive bound: 'exclusiveMinimum' is a boolean modifier. It tightens the companion 'minimum' to a strict inequality. Value must be > 0 (not >= 0).",
+                    "description": "Draft-07 exclusive bound: 'exclusiveMinimum' is a standalone numeric keyword (same as 2019-09/2020-12). Value must be strictly greater than 0.",
                     "type": "number",
-                    "minimum": 0,
-                    "exclusiveMinimum": true
+                    "exclusiveMinimum": 0
                 },
                 "BeamEnergy": {
                     "title": "Beam Energy [eV]",
-                    "description": "Draft-07 exclusive bound on the upper side: 'exclusiveMaximum: true' makes the companion 'maximum' strict. Value must be < 30000.",
+                    "description": "Draft-07 exclusive bound on the upper side: 'exclusiveMaximum' is a standalone number. Value must be strictly less than 30000. 'multipleOf' constrains the value to increments of 100.",
                     "type": "number",
                     "minimum": 100,
-                    "maximum": 30000,
-                    "exclusiveMaximum": true,
+                    "exclusiveMaximum": 30000,
                     "multipleOf": 100
                 },
                 "WorkingDistance": {

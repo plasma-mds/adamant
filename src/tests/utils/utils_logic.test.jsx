@@ -8,6 +8,8 @@ import convertedSchemaPropertiesSort from '../../components/utils/convertedSchem
 import changeKeywords from '../../components/utils/changeKeywords';
 import nicelySort from '../../components/utils/nicelySort';
 import checkIDexistence from '../../components/utils/checkIDexistence';
+import findFieldValueByKey from '../../components/utils/findFieldValueByKey';
+import sanitizeFilename from '../../components/utils/sanitizeFilename';
 
 describe('Utility Functions - Core Helper Logic', () => {
 
@@ -202,6 +204,43 @@ describe('Utility Functions - Core Helper Logic', () => {
             expect(checkIDexistence(schema, 'name')).toBe(true);
             expect(checkIDexistence(schema, 'age')).toBe(true);
             expect(checkIDexistence(schema, 'gender')).toBe(false);
+        });
+    });
+
+    describe('findFieldValueByKey', () => {
+        it('finds a top-level value by key, case-insensitively', () => {
+            expect(findFieldValueByKey({ URN: 'urn:test:1' }, 'URN')).toBe('urn:test:1');
+            expect(findFieldValueByKey({ urn: 'urn:test:2' }, 'URN')).toBe('urn:test:2');
+        });
+
+        it('finds a value nested inside objects and arrays', () => {
+            const data = { SEMParameters: { nested: [{ URN: 'urn:nested:1' }] } };
+            expect(findFieldValueByKey(data, 'URN')).toBe('urn:nested:1');
+        });
+
+        it('returns undefined when the key is not present anywhere', () => {
+            expect(findFieldValueByKey({ foo: 'bar' }, 'URN')).toBeUndefined();
+        });
+    });
+
+    describe('sanitizeFilename', () => {
+        it('replaces characters invalid on Windows/macOS/Linux filenames', () => {
+            const result = sanitizeFilename('urn:sample/2024:01?"*<>|');
+            expect(result).not.toMatch(/[/\\?%*:|"<>]/);
+            expect(result.startsWith('urn-sample-2024-01')).toBe(true);
+        });
+
+        it('strips control/non-printable characters', () => {
+            expect(sanitizeFilename('abc\x00\x1Fdef')).toBe('abcdef');
+        });
+
+        it('returns an empty string for undefined/null input', () => {
+            expect(sanitizeFilename(undefined)).toBe('');
+            expect(sanitizeFilename(null)).toBe('');
+        });
+
+        it('trims trailing dots and whitespace', () => {
+            expect(sanitizeFilename('  My File...  ')).toBe('My File');
         });
     });
 

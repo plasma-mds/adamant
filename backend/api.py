@@ -17,10 +17,17 @@ import elabapi_python
 from elabapi_python.rest import ApiException
 #from zipfile import ZipFile
 import io
+import nextcloud_utils
 
 app = Flask(__name__, static_folder='../build', static_url_path='/')  # for Gunicorn deployment
 # app = Flask(__name__)
 api = Api(app)
+
+TEMP_FILES_DIR = 'temp-files'
+
+
+def ensure_temp_files_dir():
+    os.makedirs(TEMP_FILES_DIR, exist_ok=True)
 
 @app.route('/api/check_mode', methods=["GET"])
 def check_mode():
@@ -63,6 +70,20 @@ def get_schemas():
     return list_of_schemas
 
 
+# fetch a JSON schema from an arbitrary, user-supplied URL
+@app.route('/api/load_schema_from_url', methods=['POST'])
+def load_schema_from_url():
+    url = request.form['url']
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        schema = response.json()
+        return {"status": 200, "schema": schema}
+    except Exception as e:
+        print(f"Error in load_schema_from_url: {e}")
+        return {"status": 500, "message": "Unable to fetch or parse a JSON schema from that URL."}
+
+
 # get available tags from eLabFTW
 @app.route('/api/get_tags', methods=['POST'])
 def get_tags():
@@ -80,6 +101,7 @@ def get_tags():
 # create experiment in eLabFTW
 @app.route('/api/create_experiment', methods=['POST'])
 def create_experiment():
+    ensure_temp_files_dir()
     jsdata = request.form['javascript_data']
     jsschema = request.form['schema']
     elabURL = request.form['eLabURL']
@@ -391,6 +413,7 @@ def read_experiment():
 
 @app.route('/api/update_experiment', methods=['POST'])
 def update_experiment():
+    ensure_temp_files_dir()
     elabURL = request.form['eLabURL']
     token = request.form['eLabToken']
     json_schema = request.form['new_schema']
@@ -441,6 +464,192 @@ def update_experiment():
     for f in os.listdir(dir):
         os.remove(os.path.join(dir, f))
     return {"status": 200, "message": "Experiment successfully updated"}
+
+@app.route('/api/elab/schemas_list', methods=['POST'])
+def elab_schemas_list():
+    elabURL = request.form['eLabURL']
+    token = request.form['eLabToken']
+    folder_name = request.form['folderName']
+    try:
+        response = requests.get(
+            '{0}/api/v2/items'.format(elabURL),
+            headers={'Authorization': token},
+            params={'q': folder_name},
+        )
+        items = response.json()
+        matched = next((i for i in items if i.get('title') == folder_name), None)
+        if matched is None:
+            return {"status": 404, "message": "No eLabFTW item titled '{0}' was found.".format(folder_name)}
+
+        item_id = matched['id']
+        entries = list_item_json_uploads(elabURL, token, item_id)
+        return {"status": 200, "itemId": item_id, "entries": entries}
+    except Exception as e:
+        print(f"Error in elab_schemas_list: {e}")
+        return {"status": 500, "message": "Unable to list schemas from eLabFTW."}
+
+
+@app.route('/api/elab/schemas_read', methods=['POST'])
+def elab_schemas_read():
+    elabURL = request.form['eLabURL']
+    token = request.form['eLabToken']
+    item_id = request.form['itemId']
+    upload_id = request.form['uploadId']
+    try:
+        response = requests.get(
+            '{0}/api/v2/items/{1}/uploads/{2}?format=binary'.format(elabURL, item_id, upload_id),
+            headers={'Authorization': token},
+        )
+        return json.loads(response.text)
+    except Exception as e:
+        print(f"Error in elab_schemas_read: {e}")
+        return {"status": 500, "message": "Unable to read this schema from eLabFTW."}
+
+
+@app.route('/api/elab/categories_list', methods=['POST'])
+def elab_categories_list():
+    elabURL = request.form['eLabURL']
+    token = request.form['eLabToken']
+    try:
+        response = requests.get(
+            '{0}/api/v2/items_categories'.format(elabURL),
+            headers={'Authorization': token},
+        )
+        categories = response.json()
+        return {
+            "status": 200,
+            "categories": [
+                {"id": c["id"], "title": c["title"], "color": c.get("color")}
+                for c in categories
+            ],
+        }
+    except Exception as e:
+        print(f"Error in elab_categories_list: {e}")
+        return {"status": 500, "message": "Unable to list categories from eLabFTW."}
+
+
+@app.route('/api/elab/items_list', methods=['POST'])
+def elab_items_list():
+    elabURL = request.form['eLabURL']
+    token = request.form['eLabToken']
+    category_id = request.form.get('categoryId')
+    try:
+        params = {'limit': 100}
+        if category_id:
+            params['category'] = category_id
+        response = requests.get(
+            '{0}/api/v2/items'.format(elabURL),
+            headers={'Authorization': token},
+            params=params,
+        )
+        items = response.json()
+        return {
+            "status": 200,
+            "items": [{"id": i["id"], "title": i["title"]} for i in items],
+            "truncated": len(items) >= 100,
+        }
+    except Exception as e:
+        print(f"Error in elab_items_list: {e}")
+        return {"status": 500, "message": "Unable to list items from eLabFTW."}
+
+
+@app.route('/api/elab/item_uploads', methods=['POST'])
+def elab_item_uploads():
+    elabURL = request.form['eLabURL']
+    token = request.form['eLabToken']
+    item_id = request.form['itemId']
+    try:
+        entries = list_item_json_uploads(elabURL, token, item_id)
+        return {"status": 200, "entries": entries}
+    except Exception as e:
+        print(f"Error in elab_item_uploads: {e}")
+        return {"status": 500, "message": "Unable to list schemas from this eLabFTW item."}
+
+
+@app.route('/api/nextcloud/login', methods=['POST'])
+def nextcloud_login():
+    nc_url = request.form['ncUrl']
+    username = request.form['ncUsername']
+    app_password = request.form['ncAppPassword']
+    try:
+        display_name = nextcloud_utils.verify_login(nc_url, username, app_password)
+    except Exception as e:
+        print(f"Error in nextcloud_login: {e}")
+        return {"status": 500, "message": "Unable to reach the NextCloud server."}
+
+    if display_name is None:
+        return {"status": 400, "message": "Invalid NextCloud URL, username, or app password."}
+
+    return {"status": 200, "displayname": display_name}
+
+
+@app.route('/api/nextcloud/list', methods=['POST'])
+def nextcloud_list():
+    nc_url = request.form['ncUrl']
+    username = request.form['ncUsername']
+    app_password = request.form['ncAppPassword']
+    path = request.form.get('path', '')
+    try:
+        entries = nextcloud_utils.list_directory(nc_url, username, app_password, path)
+    except Exception as e:
+        print(f"Error in nextcloud_list: {e}")
+        return {"status": 500, "message": "Unable to list this NextCloud folder."}
+
+    return {"status": 200, "path": path, "entries": entries}
+
+
+@app.route('/api/nextcloud/read', methods=['POST'])
+def nextcloud_read():
+    nc_url = request.form['ncUrl']
+    username = request.form['ncUsername']
+    app_password = request.form['ncAppPassword']
+    path = request.form['path']
+    try:
+        content = nextcloud_utils.read_file(nc_url, username, app_password, path)
+        return json.loads(content)
+    except Exception as e:
+        print(f"Error in nextcloud_read: {e}")
+        return {"status": 500, "message": "Unable to read this file from NextCloud."}
+
+
+@app.route('/api/nextcloud/upload', methods=['POST'])
+def nextcloud_upload():
+    nc_url = request.form['ncUrl']
+    username = request.form['ncUsername']
+    app_password = request.form['ncAppPassword']
+    target_path = request.form['targetPath'].strip("/")
+    metadata = request.form['metadata']
+    schema = request.form['schema']
+
+    # basename-only, in case a caller sends something other than a bare filename -
+    # the frontend already sanitizes this, this is defense in depth against path traversal
+    metadata_filename = request.form.get('metadataFilename', 'metadata.json').strip()
+    metadata_filename = os.path.basename(metadata_filename.replace('\\', '/')) or 'metadata.json'
+    schema_filename = request.form.get('schemaFilename', 'schema.json').strip()
+    schema_filename = os.path.basename(schema_filename.replace('\\', '/')) or 'schema.json'
+
+    try:
+        nextcloud_utils.make_directory(nc_url, username, app_password, target_path)
+        nextcloud_utils.upload_file(nc_url, username, app_password, f"{target_path}/{metadata_filename}", metadata.encode('utf-8'))
+        nextcloud_utils.upload_file(nc_url, username, app_password, f"{target_path}/{schema_filename}", schema.encode('utf-8'))
+
+        uploaded_files = request.files.getlist('files')
+        if uploaded_files:
+            resources_path = f"{target_path}/resources"
+            nextcloud_utils.make_directory(nc_url, username, app_password, resources_path)
+            for file in uploaded_files:
+                # basename-only, same as metadata/schema filenames above - defense in depth
+                # against path traversal via a crafted upload filename
+                safe_filename = os.path.basename((file.filename or "").replace('\\', '/'))
+                if not safe_filename:
+                    continue
+                nextcloud_utils.upload_file(nc_url, username, app_password, f"{resources_path}/{safe_filename}", file.read())
+    except Exception as e:
+        print(f"Error in nextcloud_upload: {e}")
+        return {"status": 500, "message": "Unable to upload the dataset to NextCloud."}
+
+    return {"status": 200, "message": "Dataset uploaded to NextCloud."}
+
 
 # Uncomment below for docker deployment
 #if __name__ == "__main__":

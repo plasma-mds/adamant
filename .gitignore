@@ -2,9 +2,12 @@
 /backend/venv
 /backend/__pycache__
 /backend/conf/jobrequest-conf.json
+/backend/temp-files
 /dist
 /test
-/GEMINI.md
-/graphify-out/
 
 JSON-schema-test/
+
+# local secrets - never commit
+.env
+.env.*

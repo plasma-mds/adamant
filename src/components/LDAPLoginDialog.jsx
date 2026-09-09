@@ -5,10 +5,10 @@ import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import Button from "@material-ui/core/Button";
 import { Route } from 'react-router-dom'
-import { TextField, Tooltip } from "@material-ui/core";
+import { Checkbox, FormControlLabel, TextField, Tooltip } from "@material-ui/core";
 import AdamantHeader from "../assets/adamant-header-5.svg"
 
-const LDAPLoginDialog = ({ openLDAPLoginDialog, setOpenLDAPLoginDialog, setIntranetUsername, setUserPassword, token, setToken, email, setEmail, handleLogin }) => {
+const LDAPLoginDialog = ({ openLDAPLoginDialog, setOpenLDAPLoginDialog, setIntranetUsername, setUserPassword, token, setToken, email, setEmail, remember, setRemember, handleLogin }) => {
 
     //onClose={() => setOpenUseCasesDialog(false)}
 
@@ -57,6 +57,10 @@ const LDAPLoginDialog = ({ openLDAPLoginDialog, setOpenLDAPLoginDialog, setIntra
                 <TextField fullWidth={true} margin="normal" label="Email" type="email" autoComplete="email" onChange={(event) => setEmail(event.target.value)} value={email} onKeyPress={(event) => handleKeypress(event)} />
                 <TextField fullWidth={true} margin="normal" label="Token" type="password" autoComplete="current-password" onChange={(event) => setToken(event.target.value)} value={token} onKeyPress={(event) => handleKeypress(event)} />
                 <div style={{ paddingBottom: "20px", color: "gray" }}>If you do not yet have an eLabFTW API token/key: first log in to your eLabFTW and generate the API key/token. <a href="https://doc.elabftw.net/api.html" target="_blank">More info</a>.</div>
+                <FormControlLabel
+                    control={<Checkbox checked={remember} onChange={(event) => setRemember(event.target.checked)} color="primary" />}
+                    label="Remember me on this device"
+                />
                     <div style={{
                         display:"flex",
                         justifyContent:"right",

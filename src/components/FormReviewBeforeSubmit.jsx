@@ -10,7 +10,7 @@ import CloseIcon from '@material-ui/icons/Close';
 import { Menu, MenuItem } from "@material-ui/core";
 
 
-const FormReviewBeforeSubmit = ({ onlineMode, openFormReviewDialog, setOpenFormReviewDialog, descriptionList, setOpenFunctions, submitFunctions, submitText, endPoint, loadedFiles }) => {
+const FormReviewBeforeSubmit = ({ onlineMode, openFormReviewDialog, setOpenFormReviewDialog, descriptionList, setOpenFunctions, submitFunctions, submitText, endPoint, loadedFiles, ncConnected, onSubmitDatasetToNextCloud }) => {
 
     // for dropdown buttons
     const [anchorEl, setAnchorEl] = useState(null);
@@ -108,6 +108,12 @@ const FormReviewBeforeSubmit = ({ onlineMode, openFormReviewDialog, setOpenFormR
                         validateLoadedFiles()
                     }} >
                         Submit Dataset
+                    </MenuItem>
+                    <MenuItem disabled={!ncConnected} onClick={() => {
+                        onSubmitDatasetToNextCloud();
+                        setOpenFormReviewDialog(false);
+                    }} >
+                        Submit Dataset to NextCloud
                     </MenuItem>
                 </Menu>
             </DialogActions>

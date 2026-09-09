@@ -6,6 +6,7 @@ import { FormContext } from '../../FormContext';
 import AddElement from '../../components/AddElement';
 import EditSchemaHeader from '../../components/EditSchemaHeader';
 import LDAPLoginDialog from '../../components/LDAPLoginDialog';
+import ELabFTWLoginDialog from '../../components/ELabFTWLoginDialog';
 import FormReviewBeforeSubmit from '../../components/FormReviewBeforeSubmit';
 import JSONSchemaViewerDialog from '../../components/JSONSchemaViewerDialog';
 import ProgressDialog from '../../components/ProgressDialog';
@@ -281,6 +282,73 @@ describe('Dialogue and Modal Components', () => {
       fireEvent.click(loginBtn);
 
       expect(handleLoginMock).toHaveBeenCalled();
+    });
+  });
+
+  describe('ELabFTWLoginDialog Component', () => {
+    const renderDialog = (overrides = {}) => {
+      const mocks = {
+        setOpen: vi.fn(),
+        setToken: vi.fn(),
+        setEmail: vi.fn(),
+        setRemember: vi.fn(),
+        handleLogin: vi.fn(),
+        setExternalElabUrl: vi.fn(),
+        setExternalToken: vi.fn(),
+        setExternalEmail: vi.fn(),
+        setExternalRemember: vi.fn(),
+        handleExternalLogin: vi.fn(),
+      };
+      render(
+        <ELabFTWLoginDialog
+          open={true}
+          setOpen={mocks.setOpen}
+          token="" setToken={mocks.setToken}
+          email="" setEmail={mocks.setEmail}
+          remember={false} setRemember={mocks.setRemember}
+          handleLogin={mocks.handleLogin}
+          externalElabUrl="" setExternalElabUrl={mocks.setExternalElabUrl}
+          externalToken="" setExternalToken={mocks.setExternalToken}
+          externalEmail="" setExternalEmail={mocks.setExternalEmail}
+          externalRemember={false} setExternalRemember={mocks.setExternalRemember}
+          handleExternalLogin={mocks.handleExternalLogin}
+          {...overrides}
+        />
+      );
+      return mocks;
+    };
+
+    it('defaults to the institution instance: no URL field, Continue calls handleLogin', () => {
+      const mocks = renderDialog();
+
+      expect(screen.getByText(/Connect with eLabFTW/i)).toBeInTheDocument();
+      expect(screen.getByText(/This institution's eLabFTW/i)).toBeInTheDocument();
+      expect(screen.getByText(/A different eLabFTW instance/i)).toBeInTheDocument();
+      expect(screen.queryByPlaceholderText('https://demo.elabftw.net')).not.toBeInTheDocument();
+
+      fireEvent.change(document.querySelector('input[type="email"]'), { target: { value: 'jane@example.com' } });
+      expect(mocks.setEmail).toHaveBeenCalledWith('jane@example.com');
+
+      fireEvent.click(screen.getByRole('button', { name: /Continue/i }));
+      expect(mocks.handleLogin).toHaveBeenCalled();
+      expect(mocks.handleExternalLogin).not.toHaveBeenCalled();
+    });
+
+    it('switching to "A different eLabFTW instance" reveals the URL field and routes Continue to handleExternalLogin', () => {
+      const mocks = renderDialog();
+
+      fireEvent.click(screen.getByText(/A different eLabFTW instance/i));
+
+      const urlInput = screen.getByPlaceholderText('https://demo.elabftw.net');
+      fireEvent.change(urlInput, { target: { value: 'https://demo.elabftw.net' } });
+      expect(mocks.setExternalElabUrl).toHaveBeenCalledWith('https://demo.elabftw.net');
+
+      fireEvent.change(document.querySelector('input[type="email"]'), { target: { value: 'jane@example.com' } });
+      expect(mocks.setExternalEmail).toHaveBeenCalledWith('jane@example.com');
+
+      fireEvent.click(screen.getByRole('button', { name: /Continue/i }));
+      expect(mocks.handleExternalLogin).toHaveBeenCalled();
+      expect(mocks.handleLogin).not.toHaveBeenCalled();
     });
   });
 

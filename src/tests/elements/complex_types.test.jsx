@@ -92,6 +92,23 @@ describe('Complex Input Elements', () => {
       expect(contextValue.updateParent).toHaveBeenCalled();
       expect(contextValue.handleDataDelete).toHaveBeenCalledWith('userMetadata');
     });
+
+    it('does not crash when a schema field is "type: object" with no explicit properties (e.g. additionalProperties/patternProperties-only)', () => {
+      // real-world schemas commonly use bare {"type": "object"} for free-form key-value
+      // maps (see e.g. package.json's "resolutions"/"overrides") - object2array never sets
+      // a "properties" key for these, so field_properties arrives as undefined
+      renderWithProvider(
+        <ObjectType
+          field_label="Resolutions"
+          field_key="resolutions"
+          path="properties.resolutions"
+          pathFormData="resolutions"
+          field_properties={undefined}
+        />
+      );
+
+      expect(screen.getByText(/Resolutions/i)).toBeInTheDocument();
+    });
   });
 
   describe('ArrayType Component', () => {

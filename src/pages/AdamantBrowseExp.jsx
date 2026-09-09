@@ -55,6 +55,7 @@ import fillForm from "../components/utils/fillForm";
 
 import AdamantVersion from "../assets/adamant_version.json"
 import GeneralConfig from "../general-conf.json"
+import { getRemembered, setRemembered, isRemembered } from "../components/utils/rememberableStorage";
 
 // function that receive the schema and convert it to Form/json data blueprint
 // also to already put the default value to this blueprint
@@ -165,6 +166,9 @@ const AdamantBrowseExp = () => {
   const [loginState, setLoginState] = useState("false");
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
+  // "Remember me": persist the login (email + API token) in localStorage across browser
+  // restarts instead of only sessionStorage. Opt-in, defaults to whatever was chosen last time.
+  const [rememberElab, setRememberElab] = useState(() => isRemembered("token"));
   // for dropdown buttons
   const [anchorEl, setAnchorEl] = useState(null);
   const [
@@ -197,34 +201,18 @@ const AdamantBrowseExp = () => {
 
   //-------------------------- useEffects to save states between reloads ----------------------------
   useEffect(() => {
-    setFirstName(
-      window.sessionStorage.getItem("firstName") === null
-        ? ""
-        : window.sessionStorage.getItem("firstName")
-    );
-    setToken(
-      window.sessionStorage.getItem("token") === null
-        ? ""
-        : window.sessionStorage.getItem("token")
-    );
-    setLoginState(
-      window.sessionStorage.getItem("loginState") === null
-        ? "false"
-        : window.sessionStorage.getItem("loginState")
-    );
-    setEmail(
-      window.sessionStorage.getItem("email") === null
-        ? ""
-        : window.sessionStorage.getItem("email")
-    );
+    setFirstName(getRemembered("firstName") ?? "");
+    setToken(getRemembered("token") ?? "");
+    setLoginState(getRemembered("loginState") ?? "false");
+    setEmail(getRemembered("email") ?? "");
   }, []);
 
   useEffect(() => {
-    window.sessionStorage.setItem("firstName", firstName);
-    window.sessionStorage.setItem("token", token);
-    window.sessionStorage.setItem("loginState", loginState);
-    window.sessionStorage.setItem("email", email);
-  }, [firstName, token, loginState, email]);
+    setRemembered("firstName", firstName, rememberElab);
+    setRemembered("token", token, rememberElab);
+    setRemembered("loginState", loginState, rememberElab);
+    setRemembered("email", email, rememberElab);
+  }, [firstName, token, loginState, email, rememberElab]);
   //-------------------------------------------------------------------------------------------------
 
   let implementedFieldTypes = [
@@ -401,18 +389,13 @@ const AdamantBrowseExp = () => {
     });
   };
 
+  // logging out only ends the active session (loginState); email/token stay saved (in
+  // whichever storage the "remember me" choice put them in) so the login dialog reopens
+  // pre-filled and reconnecting is just a click, not a retype
   const handleLogOut = () => {
     setLoginState("false");
-    setToken("");
-    setFirstName("");
-    setEmail("");
     setExperiments([]);
     setExperimentData({});
-
-    window.sessionStorage.setItem("firstName", "");
-    window.sessionStorage.setItem("token", "");
-    window.sessionStorage.setItem("loginState", "false");
-    window.sessionStorage.setItem("email", "");
   };
 
   const handleBack2Browse = () => {
@@ -1846,6 +1829,8 @@ const AdamantBrowseExp = () => {
         setToken={setToken}
         email={email}
         setEmail={setEmail}
+        remember={rememberElab}
+        setRemember={setRememberElab}
         handleLogin={handleLogin}
       />
     </>

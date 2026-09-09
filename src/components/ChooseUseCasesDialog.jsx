@@ -53,7 +53,7 @@ const ChooseUseCasesDialog = ({ openUseCasesDialog, setOpenUseCasesDialog, first
                                 color="primary"
                                 onClick={() => setOpenLDAPLoginDialog(true)}
                             >
-                                LOG IN
+                                LOG IN (ELABFTW)
                             </Button>
                         ) : (
                             <>

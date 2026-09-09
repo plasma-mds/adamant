@@ -23,15 +23,17 @@ Accompanying article can be found at: https://f1000research.com/articles/11-475/
 
 # Changelog
 
-## [1.4.1] June 1, 2026
-### Added
-- Support for `null` type fields in schema rendering and editing.
+## [1.4.0] September 9, 2026
 - Full JSON Schema dialect support for Draft-07, 2019-09, and 2020-12 across form rendering, schema editing, and validation (resolves [#4](https://github.com/plasma-mds/adamant/issues/4); 2020-12 included as additional dialect beyond the original issue scope).
-- Updated demo schemas for Draft-07, 2019-09, and 2020-12 dialects with richer example fields.
-
-### Fixed
-- Validation exception handling for schema-against-specification checks, preventing crashes on unknown dialects.
-- Schema editing dialog now correctly handles dialect-specific keywords and constraints.
+- Support for `null` type fields in schema rendering and editing.
+- NextCloud integration: connect, browse, and upload/download schemas and datasets.
+- Connect to an external eLabFTW instance in addition to the pre-configured one, from a single "Connect with eLabFTW" dialog; only one eLabFTW connection is active at a time.
+- "Load schema from URL" to fetch a schema directly by link.
+- Optional "Remember me" on NextCloud/eLabFTW logins, keeping the connection across browser restarts and through logout/reconnect.
+- "Create eLabFTW Experiment" now defaults to whichever eLabFTW instance is currently connected.
+- Schema-specification validation now enforces the same strict keyword checks across all dialects and no longer crashes on unknown dialects.
+- Fixed invalid Draft-04-style `exclusiveMinimum`/`exclusiveMaximum` usage in the Draft-07 demo schema.
+- Resolved all `npm audit` security advisories.
 
 ## [1.3.2] May 11, 2026
 ### Fixed
