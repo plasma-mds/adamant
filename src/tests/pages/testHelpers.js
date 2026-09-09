@@ -1,14 +1,10 @@
-import { screen, fireEvent, act } from '@testing-library/react';
+import { screen, fireEvent, act, within, waitForElementToBeRemoved } from '@testing-library/react';
 import { vi } from 'vitest';
 
 export const setupOfflineMode = ($) => {
-  let checkModeAjaxCall = null;
-  $.ajax.mockImplementation((options) => {
-    if (options.url === '/api/check_mode') {
-      checkModeAjaxCall = options;
-    }
-    return { abort: vi.fn() };
-  });
+  const checkModeAjaxCall = $.ajax.mock.calls
+    .map(([options]) => options)
+    .find((options) => options.url === '/api/check_mode');
   if (checkModeAjaxCall) {
     act(() => {
       checkModeAjaxCall.error();
@@ -18,8 +14,20 @@ export const setupOfflineMode = ($) => {
 };
 
 export const loadSchemaFromMenu = async (schemaFileName) => {
-  const openBtn = screen.getByLabelText('Open');
-  fireEvent.click(openBtn);
+  // dismiss the "What would you like to do?" intro dialog, if still open, so it
+  // doesn't leave the rest of the page marked aria-hidden for later role-based queries
+  const introDialog = screen.queryByRole('dialog', { hidden: true });
+  if (introDialog) {
+    fireEvent.click(within(introDialog).getByAltText('header'));
+    await waitForElementToBeRemoved(introDialog);
+  }
+
+  const input = document.getElementById('select-available-schema');
+  fireEvent.mouseDown(input);
+  fireEvent.change(input, { target: { value: schemaFileName } });
+
+  // "Default" is collapsed behind a hover reveal, same as the remote service groups
+  fireEvent.mouseEnter(screen.getByText('Default'));
   const option = await screen.findByText(schemaFileName);
   fireEvent.click(option);
 };

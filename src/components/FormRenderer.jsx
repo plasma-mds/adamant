@@ -4,7 +4,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import ElementRenderer from "./ElementRenderer";
 import Typography from '@material-ui/core/Typography';
 import Divider from '@material-ui/core/Divider';
-import { Button } from '@material-ui/core';
+import { Button, Menu, MenuItem } from '@material-ui/core';
 import EditIcon from '@material-ui/icons/Edit';
 import AddIcon from "@material-ui/icons/AddBox";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
@@ -17,8 +17,11 @@ import JSONSchemaViewerDialog from "./JSONSchemaViewerDialog";
 import { Tooltip } from "@material-ui/core";
 import { useDropzone } from "react-dropzone";
 import { toast } from "react-toastify";
+import $ from "jquery";
 import fillForm from "./utils/fillForm";
 import EditElement from "./EditElement";
+import NextCloudBrowseDialog from "./NextCloudBrowseDialog";
+import ELabFTWBrowseDialog from "./ELabFTWBrowseDialog";
 
 const checkFormDataValidity = (file) => {
     let validity = false
@@ -41,12 +44,23 @@ const useStyles = makeStyles((theme) => ({
     },
 }));
 
-const FormRenderer = ({ setSchemaSpecification, revertAllChanges, schema, edit, setEditMode, originalSchema }) => {
+const FormRenderer = ({
+    setSchemaSpecification, revertAllChanges, schema, edit, setEditMode, originalSchema,
+    ncUrl, ncUsername, ncAppPassword, ncLoginState,
+    eLabURL, token, loginState,
+    externalElabUrl, externalToken, externalLoginState,
+}) => {
     const {setLoadedFiles, updateParent, convertedSchema } = useContext(FormContext);
     const [openDialogAddElement, setOpenDialogAddElement] = useState(false);
     const [openDialog, setOpenDialog] = useState(false);
     const [openSchemaViewer, setOpenSchemaViewer] = useState(false);
     const [receivedData, setReceivedData] = useState()
+
+    // "upload input data" source menu, plus the browse dialogs for its NextCloud/eLabFTW sources
+    const [uploadDataMenuAnchorEl, setUploadDataMenuAnchorEl] = useState(null);
+    const [openNcDataBrowseDialog, setOpenNcDataBrowseDialog] = useState(false);
+    const [openElabDataBrowseDialog, setOpenElabDataBrowseDialog] = useState(false);
+    const [openExternalElabDataBrowseDialog, setOpenExternalElabDataBrowseDialog] = useState(false);
 
     const classes = useStyles();
 
@@ -102,10 +116,71 @@ const FormRenderer = ({ setSchemaSpecification, revertAllChanges, schema, edit, 
         }
     }, [receivedData])
 
-    const { getRootProps, getInputProps } = useDropzone({
+    const { getInputProps, open: openLocalDataFilePicker } = useDropzone({
         onDrop,
         multiple: false,
+        noClick: true,
+        noKeyboard: true,
     });
+
+    // read a data file selected from NextCloud/eLabFTW into the same receivedData state the
+    // local-file upload already uses, so the existing fillForm effect above handles it unchanged
+    const handleNextCloudDataSelected = (path) => {
+        $.ajax({
+            type: "POST",
+            url: "/api/nextcloud/read",
+            dataType: "json",
+            data: { ncUrl, ncUsername, ncAppPassword, path },
+            success: function (obj) {
+                if (obj["status"] === 500) {
+                    toast.error(obj["message"] || "Unable to read this file from NextCloud.", { toastId: "ncDataReadError" });
+                    return;
+                }
+                setReceivedData(obj);
+            },
+            error: function () {
+                toast.error("Unable to read this file from NextCloud.", { toastId: "ncDataReadError" });
+            },
+        });
+    };
+
+    const handleElabDataSelected = (entry) => {
+        $.ajax({
+            type: "POST",
+            url: "/api/elab/schemas_read",
+            dataType: "json",
+            data: { eLabURL, eLabToken: token, itemId: entry.itemId, uploadId: entry["id"] },
+            success: function (obj) {
+                if (obj["status"] === 500) {
+                    toast.error(obj["message"] || "Unable to read this file from eLabFTW.", { toastId: "elabDataReadError" });
+                    return;
+                }
+                setReceivedData(obj);
+            },
+            error: function () {
+                toast.error("Unable to read this file from eLabFTW.", { toastId: "elabDataReadError" });
+            },
+        });
+    };
+
+    const handleExternalElabDataSelected = (entry) => {
+        $.ajax({
+            type: "POST",
+            url: "/api/elab/schemas_read",
+            dataType: "json",
+            data: { eLabURL: externalElabUrl, eLabToken: externalToken, itemId: entry.itemId, uploadId: entry["id"] },
+            success: function (obj) {
+                if (obj["status"] === 500) {
+                    toast.error(obj["message"] || "Unable to read this file from eLabFTW.", { toastId: "elabExternalDataReadError" });
+                    return;
+                }
+                setReceivedData(obj);
+            },
+            error: function () {
+                toast.error("Unable to read this file from eLabFTW.", { toastId: "elabExternalDataReadError" });
+            },
+        });
+    };
 
     // deconstruct
     const { properties, title, description, required, $schema, id, $id } = schema ?? {}
@@ -143,11 +218,30 @@ const FormRenderer = ({ setSchemaSpecification, revertAllChanges, schema, edit, 
                     <Button onClick={() => { setEditMode(!edit) }} color={edit ? "primary" : "secondary"} variant="outlined" style={{ width: "150px", marginLeft: "5px", fontSize: "7pt" }} size="small">{edit ? "Edit Mode: ON": "Edit Mode: OFF"}</Button>
                 </Tooltip>
                 <Tooltip placement="top" title="You can upload a JSON data to prefill this form (only works if the data were created using the same schema)">
-                    <Button variant="outlined" color="primary" style={{ width: "150px", marginLeft: "5px", fontSize: "7pt" }} size="small" {...getRootProps()}>
-                        <input {...getInputProps()} />
+                    <Button variant="outlined" color="primary" style={{ width: "150px", marginLeft: "5px", fontSize: "7pt" }} size="small" onClick={(event) => setUploadDataMenuAnchorEl(event.currentTarget)}>
                         upload input data
                     </Button>
                 </Tooltip>
+                <input {...getInputProps()} style={{ display: "none" }} />
+                <Menu
+                    anchorEl={uploadDataMenuAnchorEl}
+                    open={Boolean(uploadDataMenuAnchorEl)}
+                    onClose={() => setUploadDataMenuAnchorEl(null)}
+                >
+                    <MenuItem onClick={() => { setUploadDataMenuAnchorEl(null); openLocalDataFilePicker(); }}>
+                        Local file
+                    </MenuItem>
+                    <MenuItem disabled={ncLoginState !== "true"} onClick={() => { setUploadDataMenuAnchorEl(null); setOpenNcDataBrowseDialog(true); }}>
+                        NextCloud
+                    </MenuItem>
+                    <MenuItem disabled={loginState !== "true" && externalLoginState !== "true"} onClick={() => {
+                        setUploadDataMenuAnchorEl(null);
+                        // only one of internal/external eLabFTW is ever connected at a time
+                        if (loginState === "true") { setOpenElabDataBrowseDialog(true); } else { setOpenExternalElabDataBrowseDialog(true); }
+                    }}>
+                        eLabFTW
+                    </MenuItem>
+                </Menu>
                 <Tooltip placement="top" title="View JSON Schema for this form">
                     <Button onClick={() => setOpenSchemaViewer(true)} style={{ marginLeft: "5px" }}><JsonIcon style={{ height: "22px" }} /></Button>
                 </Tooltip>
@@ -206,6 +300,32 @@ const FormRenderer = ({ setSchemaSpecification, revertAllChanges, schema, edit, 
             setOpenSchemaViewer={setOpenSchemaViewer}
             jsonschema={originalSchema}
         /> : null}
+        <NextCloudBrowseDialog
+            open={openNcDataBrowseDialog}
+            setOpen={setOpenNcDataBrowseDialog}
+            ncUrl={ncUrl}
+            ncUsername={ncUsername}
+            ncAppPassword={ncAppPassword}
+            mode="pick-file"
+            title="Browse Input Data (NextCloud)"
+            onSelectFile={handleNextCloudDataSelected}
+        />
+        <ELabFTWBrowseDialog
+            open={openElabDataBrowseDialog}
+            setOpen={setOpenElabDataBrowseDialog}
+            eLabURL={eLabURL}
+            token={token}
+            title="Browse Input Data (eLabFTW)"
+            onSelectFile={handleElabDataSelected}
+        />
+        <ELabFTWBrowseDialog
+            open={openExternalElabDataBrowseDialog}
+            setOpen={setOpenExternalElabDataBrowseDialog}
+            eLabURL={externalElabUrl}
+            token={externalToken}
+            title="Browse Input Data (eLabFTW - External)"
+            onSelectFile={handleExternalElabDataSelected}
+        />
     </>);
 };
 

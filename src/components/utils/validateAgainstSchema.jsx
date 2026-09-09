@@ -13,7 +13,7 @@ import deleteKeySchema from "./deleteKeySchema";
 import getValueInSchemaFullPath from "./getValueInSchemaFullPath";
 
 const makeAjv = (AjvClass, options) => {
-    const ajv = new AjvClass({ allErrors: true, strict: false, ...options });
+    const ajv = new AjvClass({ allErrors: true, ...options });
     addFormats(ajv);
     return ajv;
 };
@@ -21,8 +21,8 @@ const makeAjv = (AjvClass, options) => {
 // Dialects in priority order: the first whose `match` substring is found in
 // $schema is used both to normalize $schema and to pick the Ajv class.
 export const DIALECTS = [
-    { match: "2020-12", schemaUri: "https://json-schema.org/draft/2020-12/schema", AjvClass: Ajv2020, options: { strict: false } },
-    { match: "2019-09", schemaUri: "https://json-schema.org/draft/2019-09/schema", AjvClass: Ajv2019, options: { strict: false } },
+    { match: "2020-12", schemaUri: "https://json-schema.org/draft/2020-12/schema", AjvClass: Ajv2020 },
+    { match: "2019-09", schemaUri: "https://json-schema.org/draft/2019-09/schema", AjvClass: Ajv2019 },
     { match: "draft-07", schemaUri: "http://json-schema.org/draft-07/schema#", AjvClass: Ajv },
     { match: "draft-04", schemaUri: "http://json-schema.org/draft-04/schema#", AjvClass: Ajv04, options: { schemaId: "id" } },
 ];

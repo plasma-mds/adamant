@@ -1,11 +1,13 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 //import { makeStyles } from "@material-ui/core/styles";
 import { useDropzone } from "react-dropzone";
 import $ from "jquery";
 //import QPTDATLogo from "../assets/header-image.png";
 import FormRenderer from "../components/FormRenderer";
 import Button from "@material-ui/core/Button";
-import { TextField } from "@material-ui/core";
+import { TextField, Chip, ListSubheader, Popper, Paper, MenuList } from "@material-ui/core";
+import CancelIcon from "@material-ui/icons/Cancel";
+import { Autocomplete, createFilterOptions } from "@material-ui/lab";
 import Divider from "@material-ui/core/Divider";
 import { FormContext } from "../FormContext";
 import array2object from "../components/utils/array2object";
@@ -33,21 +35,29 @@ import SchemaSeven from "../schemas/demo-schema-2020-12.json";
 import SchemaEight from "../schemas/demo-schema-draft-07.json";
 import fillValueWithEmptyString from "../components/utils/fillValueWithEmptyString";
 import convData2FormData from "../components/utils/convData2FormData";
+import findFieldValueByKey from "../components/utils/findFieldValueByKey";
+import sanitizeFilename from "../components/utils/sanitizeFilename";
 import FormReviewBeforeSubmit from "../components/FormReviewBeforeSubmit";
 import changeKeywords from "../components/utils/changeKeywords";
 //import QPTDATLogo from "../assets/adamant-header-5.svg";
 import QPTDATLogo from "../assets/adamant-header-5.svg";
 import createDescriptionListFromJSON from "../components/utils/createDescriptionListFromJSON";
 import validateSchemaAgainstSpecification from "../components/utils/validateSchemaAgainstSpecification";
-import { Autocomplete } from "@mui/material";
 import checkIDexistence from "../components/utils/checkIDexistence";
 
 import ChooseUseCasesDialog from "../components/ChooseUseCasesDialog";
-import LDAPLoginDialog from "../components/LDAPLoginDialog";
+import ELabFTWLoginDialog from "../components/ELabFTWLoginDialog";
 import DatasetSubmissionDialog from "../components/DatasetSubmissionDialog";
+import NextCloudLoginDialog from "../components/NextCloudLoginDialog";
+import NextCloudBrowseDialog from "../components/NextCloudBrowseDialog";
+import NextCloudUploadFilenameDialog from "../components/NextCloudUploadFilenameDialog";
+import GlobalLoadingIndicator from "../components/GlobalLoadingIndicator";
+import ELabFTWBrowseDialog from "../components/ELabFTWBrowseDialog";
+import LoadSchemaFromUrlDialog from "../components/LoadSchemaFromUrlDialog";
 
 import AdamantVersion from "../assets/adamant_version.json";
 import GeneralConfig from "../general-conf.json"
+import { getRemembered, setRemembered, isRemembered } from "../components/utils/rememberableStorage";
 
 // to create a bundle (download dataset+metadata as .zip)
 import JSZip from "jszip";
@@ -125,6 +135,23 @@ const removeEmpty = (obj) => {
   return Object.keys(obj).length > 0 || obj instanceof Array ? obj : undefined;
 };
 
+// text-filters each group's real options independently, then re-appends that group's own
+// "Browse..." action row unconditionally at the end of its own block - keeps same-group entries
+// contiguous (required by MUI's groupBy) while keeping the action row reachable even when the
+// typed text matches nothing real in that group
+const schemaOptionsFilter = createFilterOptions();
+export const filterSchemaOptions = (options, state) => {
+  const groupOrder = ["Default", "NextCloud", "eLabFTW", "Browse"];
+  let result = [];
+  groupOrder.forEach((group) => {
+    const groupOpts = options.filter((option) => option.group === group);
+    const actionOpts = groupOpts.filter((option) => option.isAction);
+    const searchableOpts = groupOpts.filter((option) => !option.isAction);
+    result = result.concat(schemaOptionsFilter(searchableOpts, state), actionOpts);
+  });
+  return result;
+};
+
 const AdamantMain = () => {
   // state management
   const [disable, setDisable] = useState(true);
@@ -163,14 +190,66 @@ const AdamantMain = () => {
   const [submitTextList, setSubmitTextList] = useState([]);
   const [submitText, setSubmitText] = useState("Submit Job Request");
   const [openUseCasesDialog, setOpenUseCasesDialog] = useState(true);
-  const [openLDAPLoginDialog, setOpenLDAPLoginDialog] = useState(false);
-  const [intranetUsername, setIntranetUsername] = useState();
-  const [userPassword, setUserPassword] = useState();
+  const [openELabFTWLoginDialog, setOpenELabFTWLoginDialog] = useState(false);
   const [loginState, setLoginState] = useState("false");
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
+  // "Remember me": persist the login (email + API token) in localStorage across browser
+  // restarts instead of only sessionStorage. Opt-in, defaults to whatever was chosen last time.
+  const [rememberElab, setRememberElab] = useState(() => isRemembered("token"));
+
+  // external eLabFTW connection (a separate, user-supplied instance, distinct from the
+  // pre-configured internal one above). Both share the single openELabFTWLoginDialog entry
+  // point above - only one of internal/external can ever be the active connection, see
+  // handleLogin/handleExternalLogin.
+  const [externalElabUrl, setExternalElabUrl] = useState("");
+  const [externalToken, setExternalToken] = useState("");
+  const [externalEmail, setExternalEmail] = useState("");
+  const [externalFirstName, setExternalFirstName] = useState("");
+  const [externalLoginState, setExternalLoginState] = useState("false");
+  const [rememberExternalElab, setRememberExternalElab] = useState(() => isRemembered("externalToken"));
+
+  // NextCloud connection
+  const [openNextCloudLoginDialog, setOpenNextCloudLoginDialog] = useState(false);
+  const [openNextCloudBrowseDialog, setOpenNextCloudBrowseDialog] = useState(false);
+  const [nextCloudBrowseMode, setNextCloudBrowseMode] = useState("pick-file");
+  const ncUrl = GeneralConfig["nextcloud-url"];
+  const [ncUsername, setNcUsername] = useState("");
+  const [ncAppPassword, setNcAppPassword] = useState("");
+  const [rememberNc, setRememberNc] = useState(() => isRemembered("ncAppPassword"));
+  const [ncDisplayName, setNcDisplayName] = useState("");
+  const [ncLoginState, setNcLoginState] = useState("false");
+
+  // confirm/edit the URN-derived file name before actually uploading to NextCloud
+  const [openNcUploadFilenameDialog, setOpenNcUploadFilenameDialog] = useState(false);
+  const [ncUploadTargetPath, setNcUploadTargetPath] = useState("");
+  const [ncUploadFilename, setNcUploadFilename] = useState("");
+  const [ncUploadSchemaFilename, setNcUploadSchemaFilename] = useState("");
+  // once the user edits the schema file name directly, stop overwriting it as the
+  // metadata file name changes - their own choice takes precedence from then on
+  const [ncUploadSchemaFilenameTouched, setNcUploadSchemaFilenameTouched] = useState(false);
+
+  // select schema combobox (Default vs NextCloud vs eLabFTW)
+  const [ncSchemaEntries, setNcSchemaEntries] = useState([]);
+  const [ncSchemaListLoading, setNcSchemaListLoading] = useState(false);
+  const [elabSchemaEntries, setElabSchemaEntries] = useState([]);
+  const [elabSchemaListLoading, setElabSchemaListLoading] = useState(false);
+  // covers other slow foreground operations that don't have their own dedicated flag:
+  // fetching+applying a NextCloud/eLabFTW/URL schema, and uploading a dataset to NextCloud
+  // (the "hovering NextCloud/eLabFTW" list loads are covered by the two flags above instead)
+  const [asyncOperationLoading, setAsyncOperationLoading] = useState(false);
+  const [elabSchemaItemId, setElabSchemaItemId] = useState(null);
+  const [selectedSchemaOption, setSelectedSchemaOption] = useState(null);
+  const [hoveredSchemaGroup, setHoveredSchemaGroup] = useState(null);
+  const [schemaSearchText, setSchemaSearchText] = useState("");
+  const [schemaComboboxOpen, setSchemaComboboxOpen] = useState(false);
+  const [openElabBrowseDialog, setOpenElabBrowseDialog] = useState(false);
+  const [openExternalElabBrowseDialog, setOpenExternalElabBrowseDialog] = useState(false);
+  const [openLoadSchemaFromUrlDialog, setOpenLoadSchemaFromUrlDialog] = useState(false);
+  const [schemaUrlInput, setSchemaUrlInput] = useState("");
   // for dropdown buttons
   const [anchorEl, setAnchorEl] = useState(null);
+  const [connectMenuAnchorEl, setConnectMenuAnchorEl] = useState(null);
   const [
     openCreateElabFTWExperimentDialog,
     setOpenCreateElabFTWExperimentDialog,
@@ -205,34 +284,47 @@ const AdamantMain = () => {
   //-------------------------- useEffects to save states between reloads ----------------------------
 
   useEffect(() => {
-    setFirstName(
-      window.sessionStorage.getItem("firstName") === null
-        ? ""
-        : window.sessionStorage.getItem("firstName")
-    );
-    setToken(
-      window.sessionStorage.getItem("token") === null
-        ? ""
-        : window.sessionStorage.getItem("token")
-    );
-    setLoginState(
-      window.sessionStorage.getItem("loginState") === null
-        ? "false"
-        : window.sessionStorage.getItem("loginState")
-    );
-    setEmail(
-      window.sessionStorage.getItem("email") === null
-        ? ""
-        : window.sessionStorage.getItem("email")
-    );
+    const rememberedLoginState = getRemembered("loginState") ?? "false";
+    const rememberedExternalLoginState = getRemembered("externalLoginState") ?? "false";
+
+    setFirstName(getRemembered("firstName") ?? "");
+    setToken(getRemembered("token") ?? "");
+    setLoginState(rememberedLoginState);
+    setEmail(getRemembered("email") ?? "");
+    setNcUsername(getRemembered("ncUsername") ?? "");
+    setNcAppPassword(getRemembered("ncAppPassword") ?? "");
+    setNcDisplayName(getRemembered("ncDisplayName") ?? "");
+    setNcLoginState(getRemembered("ncLoginState") ?? "false");
+    setExternalElabUrl(getRemembered("externalElabUrl") ?? "");
+    setExternalToken(getRemembered("externalToken") ?? "");
+    setExternalEmail(getRemembered("externalEmail") ?? "");
+    setExternalFirstName(getRemembered("externalFirstName") ?? "");
+    // only one of internal/external eLabFTW can be the active connection - if both were
+    // remembered (e.g. from before this restriction existed), the internal one wins
+    setExternalLoginState(rememberedLoginState === "true" ? "false" : rememberedExternalLoginState);
   }, []);
 
   useEffect(() => {
-    window.sessionStorage.setItem("firstName", firstName);
-    window.sessionStorage.setItem("token", token);
-    window.sessionStorage.setItem("loginState", loginState);
-    window.sessionStorage.setItem("email", email);
-  }, [firstName, token, loginState, email]);
+    setRemembered("firstName", firstName, rememberElab);
+    setRemembered("token", token, rememberElab);
+    setRemembered("loginState", loginState, rememberElab);
+    setRemembered("email", email, rememberElab);
+  }, [firstName, token, loginState, email, rememberElab]);
+
+  useEffect(() => {
+    setRemembered("externalElabUrl", externalElabUrl, rememberExternalElab);
+    setRemembered("externalToken", externalToken, rememberExternalElab);
+    setRemembered("externalEmail", externalEmail, rememberExternalElab);
+    setRemembered("externalFirstName", externalFirstName, rememberExternalElab);
+    setRemembered("externalLoginState", externalLoginState, rememberExternalElab);
+  }, [externalElabUrl, externalToken, externalEmail, externalFirstName, externalLoginState, rememberExternalElab]);
+
+  useEffect(() => {
+    setRemembered("ncUsername", ncUsername, rememberNc);
+    setRemembered("ncAppPassword", ncAppPassword, rememberNc);
+    setRemembered("ncDisplayName", ncDisplayName, rememberNc);
+    setRemembered("ncLoginState", ncLoginState, rememberNc);
+  }, [ncUsername, ncAppPassword, ncDisplayName, ncLoginState, rememberNc]);
   //-------------------------------------------------------------------------------------------------
 
   let implementedFieldTypes = [
@@ -390,9 +482,13 @@ const AdamantMain = () => {
           toast.success(`Successfully logged in!`, {
             toastId: "loginSuccess",
           });
-          setOpenLDAPLoginDialog(false);
+          setOpenELabFTWLoginDialog(false);
           setLoginState("true");
           setFirstName(status["firstname"]);
+          // only one of internal/external eLabFTW can be connected at a time
+          if (externalLoginState === "true") {
+            handleExternalLogOut();
+          }
         }
       },
       error: function (status) {
@@ -405,16 +501,437 @@ const AdamantMain = () => {
     });
   };
 
+  // logging out only ends the active session (loginState); email/token stay saved (in
+  // whichever storage the "remember me" choice put them in) so the login dialog reopens
+  // pre-filled and reconnecting is just a click, not a retype
   const handleLogOut = () => {
     setLoginState("false");
-    setToken("");
-    setFirstName("");
-    setEmail("");
 
-    window.sessionStorage.setItem("firstName", "");
-    window.sessionStorage.setItem("token", "");
-    window.sessionStorage.setItem("loginState", "false");
-    window.sessionStorage.setItem("email", "");
+    setElabSchemaEntries([]);
+    setElabSchemaItemId(null);
+  };
+
+  // handle login to an external, user-specified eLabFTW instance (reuses /api/login,
+  // which already takes elabUrl as a per-request param rather than a config constant)
+  const handleExternalLogin = () => {
+    $.ajax({
+      type: "POST",
+      url: "/api/login",
+      dataType: "json",
+      data: {
+        email: externalEmail,
+        eLabToken: externalToken,
+        elabUrl: externalElabUrl,
+      },
+      success: function (status) {
+        if (status["status"] === 400) {
+          console.log("External log in failed!");
+          console.log(status);
+          toast.error(`Failed to log you in!\nUser e-mail not found.`, {
+            toastId: "externalLoginFailed",
+          });
+        } else {
+          console.log("External login successful!");
+          toast.success(`Successfully logged in!`, {
+            toastId: "externalLoginSuccess",
+          });
+          setOpenELabFTWLoginDialog(false);
+          setExternalLoginState("true");
+          setExternalFirstName(status["firstname"]);
+          // only one of internal/external eLabFTW can be connected at a time
+          if (loginState === "true") {
+            handleLogOut();
+          }
+        }
+      },
+      error: function (status) {
+        console.log("External log in failed!");
+        console.log(status);
+        toast.error(`Failed to log you in!\nIs the server working properly? Or maybe wrong URL/token?`, {
+          toastId: "externalLoginFailed",
+        });
+      },
+    });
+  };
+
+  const handleExternalLogOut = () => {
+    setExternalLoginState("false");
+  };
+
+  // handle NextCloud login
+  const handleNextCloudLogin = () => {
+    $.ajax({
+      type: "POST",
+      url: "/api/nextcloud/login",
+      dataType: "json",
+      data: {
+        ncUrl: ncUrl,
+        ncUsername: ncUsername,
+        ncAppPassword: ncAppPassword,
+      },
+      success: function (status) {
+        if (status["status"] !== 200) {
+          console.log("NextCloud login failed!", status);
+          toast.error(status["message"] || "Failed to connect to NextCloud!", {
+            toastId: "ncLoginFailed",
+          });
+        } else {
+          console.log("NextCloud connection successful!");
+          toast.success(`Successfully connected to NextCloud!`, {
+            toastId: "ncLoginSuccess",
+          });
+          setOpenNextCloudLoginDialog(false);
+          setNcLoginState("true");
+          setNcDisplayName(status["displayname"]);
+        }
+      },
+      error: function (status) {
+        console.log("NextCloud login failed!", status);
+        toast.error(`Failed to connect to NextCloud!\nIs the server URL correct?`, {
+          toastId: "ncLoginFailed",
+        });
+      },
+    });
+  };
+
+  const handleNextCloudLogOut = () => {
+    setNcLoginState("false");
+
+    setNcSchemaEntries([]);
+  };
+
+  // fetch the list of schemas available under the configured NextCloud schemas folder
+  const loadNextCloudSchemaList = () => {
+    setNcSchemaListLoading(true);
+    $.ajax({
+      type: "POST",
+      url: "/api/nextcloud/list",
+      dataType: "json",
+      data: { ncUrl, ncUsername, ncAppPassword, path: GeneralConfig["nextcloud-schemas-folder-path"] },
+      success: function (status) {
+        setNcSchemaListLoading(false);
+        if (status["status"] !== 200) {
+          toast.error(status["message"] || "Unable to list schemas from NextCloud.", {
+            toastId: "ncSchemaListError",
+          });
+          setNcSchemaEntries([]);
+          return;
+        }
+        setNcSchemaEntries(
+          status["entries"].filter(
+            (entry) => !entry["isFolder"] && entry["name"].toLowerCase().endsWith(".json")
+          )
+        );
+      },
+      error: function () {
+        setNcSchemaListLoading(false);
+        toast.error("Unable to list schemas from NextCloud.", {
+          toastId: "ncSchemaListError",
+        });
+        setNcSchemaEntries([]);
+      },
+    });
+  };
+
+  // fetch the list of schemas available in the eLabFTW "schemas" item
+  const loadELabSchemaList = () => {
+    setElabSchemaListLoading(true);
+    $.ajax({
+      type: "POST",
+      url: "/api/elab/schemas_list",
+      dataType: "json",
+      data: {
+        eLabURL,
+        eLabToken: token,
+        folderName: GeneralConfig["elab-internal-schemas-folder-name"],
+      },
+      success: function (status) {
+        setElabSchemaListLoading(false);
+        if (status["status"] !== 200) {
+          toast.error(status["message"] || "Unable to list schemas from eLabFTW.", {
+            toastId: "elabSchemaListError",
+          });
+          setElabSchemaEntries([]);
+          return;
+        }
+        setElabSchemaItemId(status["itemId"]);
+        setElabSchemaEntries(status["entries"]);
+      },
+      error: function () {
+        setElabSchemaListLoading(false);
+        toast.error("Unable to list schemas from eLabFTW.", {
+          toastId: "elabSchemaListError",
+        });
+        setElabSchemaEntries([]);
+      },
+    });
+  };
+
+  // load a schema selected from eLabFTW (combobox quick-search or the browse dialog)
+  const handleELabSchemaSelected = (entry, itemId) => {
+    setAsyncOperationLoading(true);
+    $.ajax({
+      type: "POST",
+      url: "/api/elab/schemas_read",
+      dataType: "json",
+      data: {
+        eLabURL,
+        eLabToken: token,
+        itemId,
+        uploadId: entry["id"],
+      },
+      success: function (obj) {
+        if (obj["status"] === 500) {
+          setAsyncOperationLoading(false);
+          toast.error(obj["message"] || "Unable to read this schema from eLabFTW.", {
+            toastId: "elabReadError",
+          });
+          return;
+        }
+
+        setSelectedSchemaName("");
+        applySchemaToState(obj, entry["name"]);
+      },
+      error: function () {
+        setAsyncOperationLoading(false);
+        toast.error("Unable to read this schema from eLabFTW.", {
+          toastId: "elabReadError",
+        });
+      },
+    });
+  };
+
+  // load a schema selected from an external eLabFTW instance's browse dialog
+  const handleExternalELabSchemaSelected = (entry, itemId) => {
+    setAsyncOperationLoading(true);
+    $.ajax({
+      type: "POST",
+      url: "/api/elab/schemas_read",
+      dataType: "json",
+      data: {
+        eLabURL: externalElabUrl,
+        eLabToken: externalToken,
+        itemId,
+        uploadId: entry["id"],
+      },
+      success: function (obj) {
+        if (obj["status"] === 500) {
+          setAsyncOperationLoading(false);
+          toast.error(obj["message"] || "Unable to read this schema from eLabFTW.", {
+            toastId: "elabExternalReadError",
+          });
+          return;
+        }
+
+        setSelectedSchemaName("");
+        applySchemaToState(obj, entry["name"]);
+      },
+      error: function () {
+        setAsyncOperationLoading(false);
+        toast.error("Unable to read this schema from eLabFTW.", {
+          toastId: "elabExternalReadError",
+        });
+      },
+    });
+  };
+
+  // load a schema selected from the NextCloud browser
+  const handleNextCloudSchemaSelected = (path) => {
+    setAsyncOperationLoading(true);
+    $.ajax({
+      type: "POST",
+      url: "/api/nextcloud/read",
+      dataType: "json",
+      data: { ncUrl, ncUsername, ncAppPassword, path },
+      success: function (obj) {
+        if (obj["status"] === 500) {
+          setAsyncOperationLoading(false);
+          toast.error(obj["message"] || "Unable to read this schema from NextCloud.", {
+            toastId: "ncReadError",
+          });
+          return;
+        }
+
+        setSelectedSchemaName("");
+        applySchemaToState(obj, path);
+      },
+      error: function () {
+        setAsyncOperationLoading(false);
+        toast.error("Unable to read this schema from NextCloud.", {
+          toastId: "ncReadError",
+        });
+      },
+    });
+  };
+
+  // fetch and apply a JSON schema from an arbitrary, user-supplied URL
+  const handleLoadSchemaFromUrl = () => {
+    setAsyncOperationLoading(true);
+    $.ajax({
+      type: "POST",
+      url: "/api/load_schema_from_url",
+      dataType: "json",
+      data: { url: schemaUrlInput },
+      success: function (obj) {
+        if (obj["status"] !== 200) {
+          setAsyncOperationLoading(false);
+          toast.error(obj["message"] || "Unable to fetch or parse a JSON schema from that URL.", {
+            toastId: "loadSchemaFromUrlError",
+          });
+          return;
+        }
+
+        setOpenLoadSchemaFromUrlDialog(false);
+        setSelectedSchemaName("");
+        applySchemaToState(obj["schema"], schemaUrlInput);
+        setSchemaUrlInput("");
+      },
+      error: function () {
+        setAsyncOperationLoading(false);
+        toast.error("Unable to fetch or parse a JSON schema from that URL.", {
+          toastId: "loadSchemaFromUrlError",
+        });
+      },
+    });
+  };
+
+  // after picking a NextCloud destination folder, derive a filename from the form's "URN"
+  // field (if any) and let the user confirm/edit it before the actual upload happens
+  const handleNextCloudFolderSelected = (targetPath) => {
+    let convSchemaData = { ...convertedSchema };
+    let content = convData2FormData(
+      JSON.parse(JSON.stringify(convSchemaData["properties"]))
+    );
+    content = removeEmpty(content);
+    if (content === undefined) {
+      content = {};
+    }
+
+    const urnValue = findFieldValueByKey(content, "URN");
+    const derivedName = sanitizeFilename(urnValue) || "metadata";
+
+    setNcUploadTargetPath(targetPath);
+    setNcUploadFilename(`${derivedName}.json`);
+    setNcUploadSchemaFilename(`${derivedName}-schema.json`);
+    setNcUploadSchemaFilenameTouched(false);
+    setOpenNcUploadFilenameDialog(true);
+  };
+
+  // "<name>-schema.json" derived from the metadata file name, stripping its own .json first
+  const deriveSchemaFilenameFrom = (metadataFilename) =>
+    `${metadataFilename.replace(/\.json$/i, "")}-schema.json`;
+
+  // keep the schema file name mirroring the metadata one, unless the user has directly
+  // edited the schema file name field (see ncUploadSchemaFilenameTouched)
+  const handleNcUploadFilenameChange = (newValue) => {
+    setNcUploadFilename(newValue);
+    if (!ncUploadSchemaFilenameTouched) {
+      setNcUploadSchemaFilename(deriveSchemaFilenameFrom(newValue));
+    }
+  };
+
+  const handleNcUploadSchemaFilenameChange = (newValue) => {
+    setNcUploadSchemaFilename(newValue);
+    setNcUploadSchemaFilenameTouched(true);
+  };
+
+  // upload the filled-in dataset to NextCloud, using the confirmed/edited file name
+  const handleSubmitDatasetToNextCloud = () => {
+    let convSchemaData = { ...convertedSchema };
+    let content = convData2FormData(
+      JSON.parse(JSON.stringify(convSchemaData["properties"]))
+    );
+    let contentSchema = { ...schema };
+
+    content = removeEmpty(content);
+    if (content === undefined) {
+      content = {};
+    }
+
+    const metadataFilename = sanitizeFilename(ncUploadFilename) || "metadata.json";
+    const schemaFilename = sanitizeFilename(ncUploadSchemaFilename) || "schema.json";
+
+    let formData = new FormData();
+    formData.append("ncUrl", ncUrl);
+    formData.append("ncUsername", ncUsername);
+    formData.append("ncAppPassword", ncAppPassword);
+    formData.append("targetPath", ncUploadTargetPath);
+    formData.append("metadataFilename", metadataFilename);
+    formData.append("schemaFilename", schemaFilename);
+    formData.append("metadata", JSON.stringify(content));
+    formData.append("schema", JSON.stringify(contentSchema));
+    for (let i = 0; i < loadedFiles.length; i++) {
+      formData.append("files", loadedFiles[i], loadedFiles[i]["name"]);
+    }
+
+    setAsyncOperationLoading(true);
+    $.ajax({
+      type: "POST",
+      url: "/api/nextcloud/upload",
+      data: formData,
+      processData: false,
+      contentType: false,
+      success: function (status) {
+        setAsyncOperationLoading(false);
+        if (status["status"] !== 200) {
+          toast.error(status["message"] || "Unable to upload the dataset to NextCloud.", {
+            toastId: "ncUploadError",
+          });
+          return;
+        }
+        toast.success("Dataset uploaded to NextCloud!", { toastId: "ncUploadSuccess" });
+        setOpenNcUploadFilenameDialog(false);
+      },
+      error: function () {
+        setAsyncOperationLoading(false);
+        toast.error("Unable to upload the dataset to NextCloud.", {
+          toastId: "ncUploadError",
+        });
+      },
+    });
+  };
+
+  // apply a fetched/parsed schema object to app state, regardless of its source
+  const applySchemaToState = (rawSchema, schemaLabel) => {
+    setRenderReady(false);
+    setDisable(true);
+    setCreateScratchMode(false);
+    setJsonData({});
+
+    let convertedSchema = JSON.parse(JSON.stringify(rawSchema));
+    try {
+      convertedSchema["properties"] = object2array(
+        rawSchema["properties"],
+        rawSchema
+      );
+
+      setSchemaValidity(true);
+      setSchemaMessage(`${schemaLabel} is a valid schema`);
+      setSchema(rawSchema);
+      let oriSchema = JSON.parse(JSON.stringify(rawSchema));
+      setOriginalSchema(oriSchema);
+      setSchemaWithValues(JSON.parse(JSON.stringify(oriSchema)));
+      setConvertedSchema(convertedSchema);
+      setDisable(false);
+      setRenderReady(true);
+      setHeaderImage(QPTDATLogo);
+
+      if (jobRequestSchemas.includes(convertedSchema["title"])) {
+        setSubmitText(
+          submitTextList[jobRequestSchemas.indexOf(convertedSchema["title"])]
+        );
+      }
+      setEditMode(false);
+
+      let formData = createFormDataBlueprint(rawSchema["properties"]);
+      setJsonData(formData);
+    } catch (error) {
+      console.log(error);
+      setSchemaValidity(false);
+      setSchemaMessage(`${schemaLabel} is invalid`);
+      setSchema(null);
+    }
+    setAsyncOperationLoading(false);
   };
 
   // handle select schema on change
@@ -424,14 +941,6 @@ const AdamantMain = () => {
 
       return;
     }
-
-    //console.log(event)
-    // first reset states
-    setRenderReady(false);
-    setDisable(true);
-    setCreateScratchMode(false);
-    setJsonData({});
-    //
 
     console.log("selected schema:", schemaName);
     setSelectedSchemaName(schemaName);
@@ -450,53 +959,7 @@ const AdamantMain = () => {
       return;
     }
 
-    // convert selectedSchema schema to iterable array properties
-    let convertedSchema = JSON.parse(JSON.stringify(selectedSchema));
-    try {
-      convertedSchema["properties"] = object2array(
-        selectedSchema["properties"],
-        selectedSchema
-      );
-
-      // update states
-      setSchemaValidity(true);
-      setSchemaMessage(`${schemaName} is a valid schema`);
-      setSchema(selectedSchema);
-      let oriSchema = JSON.parse(JSON.stringify(selectedSchema));
-      setOriginalSchema(oriSchema);
-      setSchemaWithValues(JSON.parse(JSON.stringify(oriSchema)));
-      setConvertedSchema(convertedSchema);
-      setDisable(false);
-      setRenderReady(true);
-
-      if (jobRequestSchemas.includes(convertedSchema["title"])) {
-        try {
-          //setHeaderImage(SEMlogo["default"]);
-          setHeaderImage(QPTDATLogo);
-          setEditMode(false);
-          setSubmitText(
-            submitTextList[jobRequestSchemas.indexOf(convertedSchema["title"])]
-          );
-        } catch (error) {
-          console.log(error);
-          setHeaderImage(QPTDATLogo);
-          setEditMode(false);
-        }
-      } else {
-        setHeaderImage(QPTDATLogo);
-        setEditMode(false);
-      }
-
-      // create form data
-      let formData = createFormDataBlueprint(selectedSchema["properties"]);
-      setJsonData(formData);
-    } catch (error) {
-      console.log(error);
-      // update states
-      setSchemaValidity(false);
-      setSchemaMessage(`${schemaName} is invalid`);
-      setSchema(null);
-    }
+    applySchemaToState(selectedSchema, schemaName);
   };
 
   // function to check if the file accepted is of json format and json schema valid
@@ -510,53 +973,7 @@ const AdamantMain = () => {
       reader.onload = () => {
         const binaryStr = reader.result;
         const obj = JSON.parse(binaryStr);
-
-        // convert obj schema to iterable array properties
-        let convertedSchema = JSON.parse(JSON.stringify(obj));
-        try {
-          convertedSchema["properties"] = object2array(obj["properties"], obj);
-
-          // update states
-          setSchemaValidity(true);
-          setSchemaMessage(`${schemaFile[0]["name"]} is a valid schema`);
-          setSchema(obj);
-          let oriSchema = JSON.parse(JSON.stringify(obj));
-          setOriginalSchema(oriSchema);
-          setSchemaWithValues(JSON.parse(JSON.stringify(oriSchema)));
-          setConvertedSchema(convertedSchema);
-          setDisable(false);
-          setRenderReady(true);
-
-          if (jobRequestSchemas.includes(obj["title"])) {
-            try {
-                  //setHeaderImage(SEMlogo["default"]);
-              setHeaderImage(QPTDATLogo);
-              setEditMode(true);
-              setSubmitText(
-                submitTextList[
-                  jobRequestSchemas.findIndex(convertedSchema["title"])
-                ]
-              );
-            } catch (error) {
-              console.log(error);
-              setHeaderImage(QPTDATLogo);
-              setEditMode(false);
-            }
-          } else {
-            setHeaderImage(QPTDATLogo);
-            setEditMode(false);
-          }
-
-          // create form data
-          let formData = createFormDataBlueprint(obj["properties"]);
-          setJsonData(formData);
-        } catch (error) {
-          console.log(error);
-          // update states
-          setSchemaValidity(false);
-          setSchemaMessage(`${schemaFile[0]["name"]} is invalid`);
-          setSchema(null);
-        }
+        applySchemaToState(obj, schemaFile[0]["name"]);
       };
       reader.readAsText(schemaFile[0]);
     } else {
@@ -585,9 +1002,11 @@ const AdamantMain = () => {
   );
   //
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getInputProps, open: openLocalFilePicker } = useDropzone({
     onDrop,
     multiple: false,
+    noClick: true,
+    noKeyboard: true,
   });
 
   // render on-click handle
@@ -950,6 +1369,7 @@ const AdamantMain = () => {
           toastId: "formDataError",
         }
       );
+      handleClose();
       return;
     }
 
@@ -1004,6 +1424,7 @@ const AdamantMain = () => {
           toastId: "formDataError",
         }
       );
+      handleClose();
       return;
     }
     // Create elab ftw description list and store it to the description list state
@@ -1028,6 +1449,7 @@ const AdamantMain = () => {
           toastId: "formDataError",
         }
       );
+      handleClose();
       return;
     }
     // create description list
@@ -1054,6 +1476,19 @@ const AdamantMain = () => {
     a.click();
 
     handleClose();
+  };
+
+  // "Create eLabFTW Experiment" defaults to whichever eLabFTW instance is currently
+  // connected (internal or external - only one can be connected at a time), instead of
+  // always the internal one. Still freely editable inside the dialog afterward.
+  const handleOpenCreateExperimentDialog = () => {
+    if (loginState === "true") {
+      setELabURL(GeneralConfig["local-elab-url"]);
+    } else if (externalLoginState === "true") {
+      setELabURL(externalElabUrl);
+      setToken(externalToken);
+    }
+    setOpenCreateElabFTWExperimentDialog(true);
   };
 
   // get available tags from elabftw
@@ -1633,6 +2068,172 @@ const AdamantMain = () => {
     }
   };
 
+  // service groups that stay collapsed behind a hover reveal, instead of always-expanded like Default
+  const COLLAPSIBLE_GROUPS = ["Default", "NextCloud", "eLabFTW"];
+
+  // groups tied to a connection: whether their header should read as "active" rather than
+  // just a muted section label (Default/Browse have no connection concept, so always active)
+  const isSchemaGroupConnected = (group) => {
+    if (group === "NextCloud") return ncLoginState === "true";
+    if (group === "eLabFTW") return loginState === "true" || externalLoginState === "true";
+    return true;
+  };
+
+  // combined, searchable list of schema options across Default/NextCloud/eLabFTW plus their browse actions
+  const schemaOptions = useMemo(() => {
+    const localOpts = schemaNameList.filter((name) => name !== "").map((name) => ({
+      id: `local:${name}`, group: "Default", label: name, source: "local", value: name,
+    }));
+    const ncOpts = ncSchemaEntries.map((entry) => ({
+      id: `nc:${entry.name}`, group: "NextCloud", label: entry.name, source: "nextcloud",
+      value: `${GeneralConfig["nextcloud-schemas-folder-path"]}/${entry.name}`,
+    }));
+    const ncBrowseAction = {
+      id: "action:nextcloud", group: "NextCloud", label: "Browse NextCloud...", source: "action-nextcloud",
+      disabled: ncLoginState !== "true", isAction: true,
+    };
+    // only one of internal/external eLabFTW is ever connected at a time (see
+    // handleLogin/handleExternalLogin), so there is only ever one "eLabFTW" group to show.
+    // Quick-search entries only exist for the internal instance - external has no
+    // pre-configured schema path to quick-search (it differs per instance/user), so it only
+    // ever gets a browse action.
+    const elabOpts = loginState === "true" ? elabSchemaEntries.map((entry) => ({
+      id: `elab:${entry.name}`, group: "eLabFTW", label: entry.name, source: "elab", value: entry,
+    })) : [];
+    const elabBrowseAction = {
+      id: "action:elab", group: "eLabFTW", label: "Browse eLabFTW...", source: "action-elab",
+      disabled: loginState !== "true" && externalLoginState !== "true", isAction: true,
+    };
+    const localBrowseAction = {
+      id: "action:local", group: "Browse", label: "Browse local file...", source: "action-local", isAction: true,
+    };
+    const loadFromUrlAction = {
+      id: "action:url", group: "Browse", label: "Load schema from URL...", source: "action-url", isAction: true,
+    };
+    return [...localOpts, ...ncOpts, ncBrowseAction, ...elabOpts, elabBrowseAction, localBrowseAction, loadFromUrlAction];
+  }, [schemaNameList, ncSchemaEntries, elabSchemaEntries, ncLoginState, loginState, externalLoginState]);
+
+  // lazy-load NextCloud/eLabFTW schema lists the first time the combobox is opened
+  const handleSchemaComboboxOpen = () => {
+    if (ncLoginState === "true" && ncSchemaEntries.length === 0 && !ncSchemaListLoading) {
+      loadNextCloudSchemaList();
+    }
+    if (loginState === "true" && elabSchemaEntries.length === 0 && !elabSchemaListLoading) {
+      loadELabSchemaList();
+    }
+  };
+
+  const handleSchemaOptionSelected = (event, option) => {
+    if (!option) {
+      setSelectedSchemaOption(null);
+      setSchemaSearchText("");
+      clearSchemaOnClick();
+      return;
+    }
+    if (option.source === "action-local") {
+      openLocalFilePicker();
+      return;
+    }
+    if (option.source === "action-url") {
+      setOpenLoadSchemaFromUrlDialog(true);
+      return;
+    }
+    if (option.source === "action-nextcloud") {
+      setNextCloudBrowseMode("pick-file");
+      setOpenNextCloudBrowseDialog(true);
+      return;
+    }
+    if (option.source === "action-elab") {
+      // only one of internal/external eLabFTW is ever connected at a time - route to
+      // whichever one it is
+      if (loginState === "true") {
+        setOpenElabBrowseDialog(true);
+      } else {
+        setOpenExternalElabBrowseDialog(true);
+      }
+      return;
+    }
+    setSelectedSchemaOption(option);
+    setSchemaSearchText(option.label);
+    if (option.source === "local") {
+      handleSelectSchemaOnChange(option.value);
+    } else if (option.source === "nextcloud") {
+      handleNextCloudSchemaSelected(option.value);
+    } else if (option.source === "elab") {
+      handleELabSchemaSelected(option.value, elabSchemaItemId);
+    }
+  };
+
+  // groups render as a submenu flyout (a separate floating box), not an inline expansion,
+  // anchored to whichever group header the mouse (or keyboard highlight) is currently on
+  const schemaGroupAnchorRefs = useRef({});
+  const schemaGroupCloseTimerRef = useRef(null);
+
+  const openSchemaGroupFlyout = (group) => {
+    if (schemaGroupCloseTimerRef.current) {
+      clearTimeout(schemaGroupCloseTimerRef.current);
+      schemaGroupCloseTimerRef.current = null;
+    }
+    setHoveredSchemaGroup(group);
+  };
+
+  const scheduleCloseSchemaGroupFlyout = () => {
+    schemaGroupCloseTimerRef.current = setTimeout(() => setHoveredSchemaGroup(null), 150);
+  };
+
+  const hoveredSchemaGroupOptions = useMemo(() => {
+    if (!hoveredSchemaGroup) return [];
+    return filterSchemaOptions(schemaOptions, {
+      inputValue: schemaSearchText,
+      getOptionLabel: (option) => option.label,
+    }).filter((option) => option.group === hoveredSchemaGroup);
+  }, [hoveredSchemaGroup, schemaOptions, schemaSearchText]);
+
+  const handleSchemaFlyoutOptionClick = (option) => {
+    handleSchemaOptionSelected(null, option);
+    setHoveredSchemaGroup(null);
+    setSchemaComboboxOpen(false);
+  };
+
+  const renderSchemaGroup = (params) => {
+    if (!COLLAPSIBLE_GROUPS.includes(params.group)) {
+      // the "Browse" group only ever holds the single "Browse local file..." action,
+      // whose own label already says everything - a group header here is redundant
+      return (
+        <li key={params.key}>
+          <ul style={{ padding: 0 }}>{params.children}</ul>
+        </li>
+      );
+    }
+    // Default/Browse have no connection concept and stay in ListSubheader's normal muted
+    // color; NextCloud/eLabFTW switch from muted (not connected) to a full-opacity, bolder
+    // color once connected, so "connected" is visibly distinct from "just a section label"
+    // instead of every group looking identically grayed-out
+    const isServiceGroup = ["NextCloud", "eLabFTW"].includes(params.group);
+    const isConnected = isSchemaGroupConnected(params.group);
+    return (
+      <li
+        key={params.key}
+        ref={(node) => { schemaGroupAnchorRefs.current[params.group] = node; }}
+        onMouseEnter={() => openSchemaGroupFlyout(params.group)}
+        onMouseLeave={scheduleCloseSchemaGroupFlyout}
+      >
+        <ListSubheader component="div">
+          <span
+            style={isServiceGroup && isConnected ? { color: "rgba(0, 0, 0, 0.87)", fontWeight: 600 } : undefined}
+          >
+            {params.group}
+          </span>
+          <span aria-hidden="true" style={{ marginLeft: "4px", color: "#999" }}>▸</span>
+        </ListSubheader>
+      </li>
+    );
+  };
+
+  // drives the bottom-right loading badge: any NextCloud/eLabFTW list fetch (hovering a
+  // group in the schema dropdown), a schema fetch+render, or a NextCloud dataset upload
+  const isGloballyLoading = ncSchemaListLoading || elabSchemaListLoading || asyncOperationLoading;
+
   return (
     <>
       <FormContext.Provider
@@ -1689,30 +2290,65 @@ const AdamantMain = () => {
                 Home
               </Button>
               <div style={{ borderRight: "1px solid #D3D3D3" }}></div>
-              {loginState === "false" ? (
-                <Button
-                  color="primary"
-                  onClick={() => setOpenLDAPLoginDialog(true)}
+              {(loginState === "true" || externalLoginState === "true" || ncLoginState === "true") && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "0 10px",
+                  }}
                 >
-                  LOG IN
-                </Button>
-              ) : (
-                <>
-                  <div
-                    style={{
-                      display: "table-cell",
-                      height: "100%",
-                      padding: "10px",
-                    }}
-                  >
-                    Hi, {firstName}!
-                  </div>
-                  <div style={{ borderRight: "1px solid #D3D3D3" }}></div>
-                  <Button color="secondary" onClick={() => handleLogOut()}>
-                    LOG OUT
-                  </Button>
-                </>
+                  {(loginState === "true" || externalLoginState === "true") && (
+                    <Chip
+                      style={{ marginRight: "8px", color: "#2e7d32", borderColor: "#2e7d32" }}
+                      variant="outlined"
+                      label={`eLabFTW: ${loginState === "true" ? firstName : externalFirstName}`}
+                      onDelete={() => (loginState === "true" ? handleLogOut() : handleExternalLogOut())}
+                      deleteIcon={<CancelIcon titleAccess="Click to logout" />}
+                    />
+                  )}
+                  {ncLoginState === "true" && (
+                    <Chip
+                      style={{ marginRight: "8px", color: "#2e7d32", borderColor: "#2e7d32" }}
+                      variant="outlined"
+                      label={`NextCloud: ${ncDisplayName}`}
+                      onDelete={() => handleNextCloudLogOut()}
+                      deleteIcon={<CancelIcon titleAccess="Click to logout" />}
+                    />
+                  )}
+                </div>
               )}
+              <div style={{ borderRight: "1px solid #D3D3D3" }}></div>
+              <Button
+                color="primary"
+                onClick={(event) => setConnectMenuAnchorEl(event.currentTarget)}
+              >
+                CONNECT
+              </Button>
+              <Menu
+                anchorEl={connectMenuAnchorEl}
+                open={Boolean(connectMenuAnchorEl)}
+                onClose={() => setConnectMenuAnchorEl(null)}
+              >
+                <MenuItem
+                  disabled={ncLoginState === "true"}
+                  onClick={() => {
+                    setConnectMenuAnchorEl(null);
+                    setOpenNextCloudLoginDialog(true);
+                  }}
+                >
+                  NextCloud
+                </MenuItem>
+                <MenuItem
+                  disabled={loginState === "true" || externalLoginState === "true"}
+                  onClick={() => {
+                    setConnectMenuAnchorEl(null);
+                    setOpenELabFTWLoginDialog(true);
+                  }}
+                >
+                  eLabFTW
+                </MenuItem>
+              </Menu>
             </div>
           </div>
           {!inputMode ? (
@@ -1723,66 +2359,80 @@ const AdamantMain = () => {
                 padding: "10px 10px 0px 10px",
               }}
             >
-              <form autoComplete="off"
-                style={{
-                  display: "flex",
-                  width: "100%"
-                }}>
               <Autocomplete
-                disablePortal
-                value={selectedSchemaName}
-                onChange={(event, newValue) =>
-                  handleSelectSchemaOnChange(newValue)
-                }
                 id="select-available-schema"
-                options={schemaNameList}
-                style={{ width: "120%" }}
+                style={{ width: "100%" }}
+                options={schemaOptions}
+                value={selectedSchemaOption}
+                open={schemaComboboxOpen}
+                inputValue={schemaSearchText}
+                groupBy={(option) => option.group}
+                getOptionLabel={(option) => option.label || ""}
+                getOptionDisabled={(option) => Boolean(option.disabled)}
+                getOptionSelected={(option, value) => option.id === value.id}
+                filterOptions={filterSchemaOptions}
+                onOpen={() => {
+                  setSchemaComboboxOpen(true);
+                  // clear any leftover search text (e.g. the previously selected schema's
+                  // name) so every schema is visible again instead of just that one match
+                  setSchemaSearchText("");
+                  handleSchemaComboboxOpen();
+                }}
+                onClose={(event, reason) => {
+                  if (schemaGroupCloseTimerRef.current) {
+                    clearTimeout(schemaGroupCloseTimerRef.current);
+                  }
+                  setSchemaComboboxOpen(false);
+                  setHoveredSchemaGroup(null);
+                  // closing without picking a new schema (escape/blur/toggle) - restore the
+                  // box to show the currently selected schema's name, same as before opening.
+                  // A fresh pick ("select-option") already set the right text itself.
+                  if (reason !== "select-option") {
+                    setSchemaSearchText(selectedSchemaOption ? selectedSchemaOption.label : "");
+                  }
+                }}
+                onInputChange={(event, newValue) => setSchemaSearchText(newValue)}
+                onChange={handleSchemaOptionSelected}
+                onHighlightChange={(event, option) => {
+                  if (option && COLLAPSIBLE_GROUPS.includes(option.group)) {
+                    openSchemaGroupFlyout(option.group);
+                  }
+                }}
+                renderGroup={renderSchemaGroup}
                 renderInput={(params) => (
                   <TextField
-                    variant="outlined"
                     {...params}
+                    variant="outlined"
                     label="Select existing schema"
+                    autoComplete="off"
                   />
                 )}
               />
-              </form>
-              {/* <TextField
-                onChange={(event) => handleSelectSchemaOnChange(event)}
-                style={{ width: "100%" }}
-                fullWidth={false}
-                value={selectedSchemaName}
-                select
-                id={"select-schema"}
-                label={"Select existing schema"}
-                variant="outlined"
-                SelectProps={{ native: true }}
+              <Popper
+                open={Boolean(hoveredSchemaGroup) && hoveredSchemaGroupOptions.length > 0}
+                anchorEl={hoveredSchemaGroup ? schemaGroupAnchorRefs.current[hoveredSchemaGroup] : null}
+                placement="right-start"
+                style={{ zIndex: 1500 }}
               >
-                {schemaNameList.map((content, index) => (
-                  <option key={index} value={content}>
-                    {content}
-                  </option>
-                ))}
-              </TextField>
-              */}
-              <div
-                style={{
-                  paddingLeft: "10px",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                OR
-              </div>
-              <Button
-                style={{ width: "100%", marginLeft: "10px" }}
-                variant="contained"
-                color="primary"
-                {...getRootProps()}
-              >
-                <input {...getInputProps()} />
-                {isDragActive ? "Drop here" : "Browse Schema"}
-              </Button>
+                <Paper
+                  onMouseEnter={() => openSchemaGroupFlyout(hoveredSchemaGroup)}
+                  onMouseLeave={scheduleCloseSchemaGroupFlyout}
+                  onMouseDown={(event) => event.preventDefault()}
+                >
+                  <MenuList>
+                    {hoveredSchemaGroupOptions.map((option) => (
+                      <MenuItem
+                        key={option.id}
+                        disabled={Boolean(option.disabled)}
+                        onClick={() => handleSchemaFlyoutOptionClick(option)}
+                      >
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </MenuList>
+                </Paper>
+              </Popper>
+              <input {...getInputProps()} style={{ display: "none" }} />
               <div
                 style={{
                   paddingLeft: "10px",
@@ -1893,6 +2543,16 @@ const AdamantMain = () => {
             originalSchema={schema}
             edit={editMode}
             setEditMode={setEditMode}
+            ncUrl={ncUrl}
+            ncUsername={ncUsername}
+            ncAppPassword={ncAppPassword}
+            ncLoginState={ncLoginState}
+            eLabURL={eLabURL}
+            token={token}
+            loginState={loginState}
+            externalElabUrl={externalElabUrl}
+            externalToken={externalToken}
+            externalLoginState={externalLoginState}
           />
         ) : null}
         <div style={{ padding: "10px" }}>
@@ -1988,7 +2648,7 @@ const AdamantMain = () => {
           setOpenFormReviewDialog={setOpenFormReviewDialog}
           descriptionList={descriptionList}
           setOpenFunctions={{
-            setOpenCreateElabFTWExperimentDialog,
+            setOpenCreateElabFTWExperimentDialog: handleOpenCreateExperimentDialog,
             setOpenJobRequestDialog,
             setOpenDatasetSubmissionDialog,
           }}
@@ -1996,6 +2656,11 @@ const AdamantMain = () => {
           submitText={submitText}
           endPoint={window.location.href}
           loadedFiles={loadedFiles}
+          ncConnected={ncLoginState === "true"}
+          onSubmitDatasetToNextCloud={() => {
+            setNextCloudBrowseMode("pick-folder");
+            setOpenNextCloudBrowseDialog(true);
+          }}
         />
       ) : null}
       {GeneralConfig["usecase-dialog"] ? <ChooseUseCasesDialog
@@ -2003,19 +2668,80 @@ const AdamantMain = () => {
         setOpenUseCasesDialog={setOpenUseCasesDialog}
         firstName={firstName}
         loginState={loginState}
-        setOpenLDAPLoginDialog={setOpenLDAPLoginDialog}
+        setOpenLDAPLoginDialog={setOpenELabFTWLoginDialog}
         handleLogOut={handleLogOut}
       /> : null}
-      <LDAPLoginDialog
-        openLDAPLoginDialog={openLDAPLoginDialog}
-        setOpenLDAPLoginDialog={setOpenLDAPLoginDialog}
-        setIntranetUsername={setIntranetUsername}
-        setUserPassword={setUserPassword}
+      <ELabFTWLoginDialog
+        open={openELabFTWLoginDialog}
+        setOpen={setOpenELabFTWLoginDialog}
         token={token}
         setToken={setToken}
         email={email}
         setEmail={setEmail}
+        remember={rememberElab}
+        setRemember={setRememberElab}
         handleLogin={handleLogin}
+        externalElabUrl={externalElabUrl}
+        setExternalElabUrl={setExternalElabUrl}
+        externalToken={externalToken}
+        setExternalToken={setExternalToken}
+        externalEmail={externalEmail}
+        setExternalEmail={setExternalEmail}
+        externalRemember={rememberExternalElab}
+        setExternalRemember={setRememberExternalElab}
+        handleExternalLogin={handleExternalLogin}
+      />
+      <NextCloudLoginDialog
+        openNextCloudLoginDialog={openNextCloudLoginDialog}
+        setOpenNextCloudLoginDialog={setOpenNextCloudLoginDialog}
+        ncUsername={ncUsername}
+        setNcUsername={setNcUsername}
+        ncAppPassword={ncAppPassword}
+        setNcAppPassword={setNcAppPassword}
+        remember={rememberNc}
+        setRemember={setRememberNc}
+        handleNextCloudLogin={handleNextCloudLogin}
+      />
+      <NextCloudBrowseDialog
+        open={openNextCloudBrowseDialog}
+        setOpen={setOpenNextCloudBrowseDialog}
+        ncUrl={ncUrl}
+        ncUsername={ncUsername}
+        ncAppPassword={ncAppPassword}
+        mode={nextCloudBrowseMode}
+        onSelectFile={handleNextCloudSchemaSelected}
+        onSelectFolder={handleNextCloudFolderSelected}
+      />
+      <NextCloudUploadFilenameDialog
+        open={openNcUploadFilenameDialog}
+        setOpen={setOpenNcUploadFilenameDialog}
+        filename={ncUploadFilename}
+        setFilename={handleNcUploadFilenameChange}
+        schemaFilename={ncUploadSchemaFilename}
+        setSchemaFilename={handleNcUploadSchemaFilenameChange}
+        onConfirm={handleSubmitDatasetToNextCloud}
+      />
+      <ELabFTWBrowseDialog
+        open={openElabBrowseDialog}
+        setOpen={setOpenElabBrowseDialog}
+        eLabURL={eLabURL}
+        token={token}
+        onSelectFile={(entry) => handleELabSchemaSelected(entry, entry.itemId)}
+      />
+      <ELabFTWBrowseDialog
+        open={openExternalElabBrowseDialog}
+        setOpen={setOpenExternalElabBrowseDialog}
+        eLabURL={externalElabUrl}
+        token={externalToken}
+        title="Browse Schema (eLabFTW - External)"
+        onSelectFile={(entry) => handleExternalELabSchemaSelected(entry, entry.itemId)}
+      />
+      <LoadSchemaFromUrlDialog
+        open={openLoadSchemaFromUrlDialog}
+        setOpen={setOpenLoadSchemaFromUrlDialog}
+        url={schemaUrlInput}
+        setUrl={setSchemaUrlInput}
+        onSubmit={handleLoadSchemaFromUrl}
       />
       <FilesDialog
         openFilesDialog={openFilesDialog}
@@ -2029,6 +2755,7 @@ const AdamantMain = () => {
         progress={progress}
         messages={progressDialogMessages}
       />
+      <GlobalLoadingIndicator loading={isGloballyLoading} />
     </>
   );
 };

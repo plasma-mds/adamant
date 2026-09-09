@@ -69,7 +69,7 @@ const AccordionSummary = withStyles({
     expanded: {},
 })(MuiAccordionSummary);
 
-const ObjectType = ({ adamant_error_description, adamant_field_error, dataInputItems, setDataInputItems, withinArray, withinObject, field_uri, path, pathSchema, pathFormData, field_required, object_is_required, field_key, field_index, edit, field_label, field_description, field_properties }) => {
+const ObjectType = ({ adamant_error_description, adamant_field_error, dataInputItems, setDataInputItems, withinArray, withinObject, field_uri, path, pathSchema, pathFormData, field_required, object_is_required, field_key, field_index, edit, field_label, field_description, field_properties = [] }) => {
     const [openDialog, setOpenDialog] = useState(false);
     const [openDialogAddElement, setOpenDialogAddElement] = useState(false);
     const [expand, setExpand] = useState(true)// set to "true" for normally open accordion

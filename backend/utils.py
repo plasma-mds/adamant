@@ -1,3 +1,18 @@
+import requests
+
+
+def list_item_json_uploads(elabURL, token, item_id):
+    response = requests.get(
+        '{0}/api/v2/items/{1}/uploads'.format(elabURL, item_id),
+        headers={'Authorization': token},
+    )
+    uploads = response.json()
+    return [
+        {"name": u["real_name"], "isFolder": False, "id": u["id"]}
+        for u in uploads if u["real_name"].lower().endswith(".json")
+    ]
+
+
 def get_key_from_value(d, val):
     keys = [k for k, v in d.items() if v == val]
     if keys:
