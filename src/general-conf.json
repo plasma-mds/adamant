@@ -1,7 +1,7 @@
 {
-    "local-elab-url": "https://pm-labbook.intranet.inp-greifswald.de",
-    "nextcloud-url": "https://nextcloud.k1-met.com/",
+    "local-elab-url": "https://yourelabftw-instance.com",
+    "nextcloud-url": "https://yournextcloud-instance.com",
     "usecase-dialog": false,
     "elab-internal-schemas-folder-name": "Schemas-test",
-    "nextcloud-schemas-folder-path": "pa4g/dev/schemas"
+    "nextcloud-schemas-folder-path": "nextcloud/schemas/folder/path"
 }
