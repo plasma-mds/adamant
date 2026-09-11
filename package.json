@@ -38,6 +38,7 @@
     "start": "vite",
     "start-api": "cd backend && venv\\Scripts\\flask --app api.py run --no-debugger",
     "build": "vite build",
+    "build:gh-pages": "vite build --base=/adamant/",
     "test": "vitest",
     "eject": "react-scripts eject"
   },
