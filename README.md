@@ -75,7 +75,7 @@ Currently, Adamant supports the rendering and editing of JSON schemas with a spe
 __Known dependencies__: Node.js v14.15.5 and Python 3.8. The rests are handled by `package.json` and `backend/requirements.txt`.
 
 Setting up Adamant on a local machine for development:
-- `$ git clone https://github.com/csihda/adamant.git`—clone the repository
+- `$ git clone https://github.com/plasma-mds/adamant.git`—clone the repository
 - `$ cd adamant`—go to adamant project directory
 - `adamant$ npm install --legacy-peer-deps`—install the dependencies for the client-side
 - `adamant$ cd backend`—go to backend directory
@@ -93,7 +93,7 @@ By default, Adamant is accessible at `http://localhost:3000`.
 
 # Deployment
 We recommend deploying Adamant with docker-compose, which can be done with ease:
-- `$ git clone https://github.com/csihda/adamant.git`—clone the repository
+- `$ git clone https://github.com/plasma-mds/adamant.git`—clone the repository
 - `$ cd adamant`—go to adamant project directory
 - `adamant$ docker−compose build`—build the docker images for both back-end and front-end
 - `adamant$ docker−compose up -d`—start both client and server containers, i.e., the whole system
