@@ -48,12 +48,14 @@ When you open Adamant you land on the home screen. Everything starts from one ro
 
 | Element | What it does |
 |---|---|
-| **Select existing schema** (dropdown) | Opens the schema selector — built-in schemas, a local file, a URL, or schemas from a connected NextCloud/eLabFTW account. See [Section 2](#2-loading-a-schema). |
+| **Select existing schema** (dropdown) | Opens the schema selector, built-in schemas, a local file, a URL, or schemas from a connected NextCloud/eLabFTW account. See [Section 2](#2-loading-a-schema). |
 | **CREATE FROM SCRATCH** | Starts with a completely empty schema that you build yourself inside the app. |
 | **HOME** (top right) | Reloads the page and discards the current schema. |
 | **CONNECT** (top right) | Opens the menu to connect NextCloud or eLabFTW accounts. See [Section 10](#10-connecting-external-services). |
 
-A green **"Connection to server is established"** notification in the bottom-right corner means Adamant reached its back-end API — this enables the full built-in schema list and the NextCloud/eLabFTW integrations. If you don't see it, Adamant is running in offline mode; everything except connecting to NextCloud/eLabFTW still works, including uploading your own schema files.
+A green **"Connection to server is established"** notification in the bottom-right corner means Adamant reached its back-end API, this enables the full built-in schema list and the NextCloud/eLabFTW integrations. If you don't see it, Adamant is running in offline mode; everything except connecting to NextCloud/eLabFTW still works, including uploading your own schema files.
+
+A small **"Loading…"** badge with a spinner appears in the same bottom-right corner whenever Adamant is waiting on something that can take a moment, hovering NextCloud or eLabFTW in the schema selector while their file list is fetched, loading and rendering a schema, or uploading a dataset to NextCloud. It disappears on its own once the operation finishes.
 
 ---
 
@@ -68,12 +70,14 @@ Click the **Select existing schema** dropdown. It organizes every way of getting
 | Group | Contents |
 |---|---|
 | **Default** | The schemas bundled with (or served by) Adamant. Hover the group to expand it. |
-| **NextCloud** | Schemas from your connected NextCloud folder, plus a "Browse NextCloud…" action. Grayed out until you connect. |
-| **eLabFTW** | Schemas from your institution's connected eLabFTW account, plus a "Browse eLabFTW…" action. Grayed out until you connect. |
-| **eLabFTW (external)** | A "Browse eLabFTW (external)…" action for a separate, custom eLabFTW instance you connect yourself. Grayed out until you connect. |
+| **NextCloud** | Schemas from your connected NextCloud folder, plus a "Browse NextCloud…" action. Muted until you connect. |
+| **eLabFTW** | Schemas from your institution's connected eLabFTW account, plus a "Browse eLabFTW…" action. Muted until you connect. |
+| **eLabFTW (external)** | A "Browse eLabFTW (external)…" action for a separate, custom eLabFTW instance you connect yourself. Muted until you connect. |
 | **Browse** | Two always-available actions: **Browse local file…** and **Load schema from URL…**. |
 
-You can also just type — the box filters across every group as you go.
+Once a service is connected, its group name switches from a muted gray to a bolder color so you can tell at a glance which services are active.
+
+You can also just type, the box filters across every group as you go. Reopening the dropdown always clears the search box first, so every schema is visible again rather than staying filtered down to whatever you'd previously picked.
 
 ### 2.2 Built-in Schemas
 
@@ -84,8 +88,8 @@ Hover **Default** to expand its list, then click a schema name to load it.
 The list comes from Adamant's back-end (`backend/schemas/`) when a server connection is available, or from the schemas bundled into the browser app otherwise. Either way you get the same demo schemas, useful for exploring what Adamant can do.
 
 > **Deploying your own schemas?**
-> - **Server / Docker deployment** — drop `.json` files into `backend/schemas/` at the root of the repository. No restart needed if that folder is a mounted Docker volume (the default `docker-compose.yml` setup); otherwise restart the back-end container.
-> - **Offline/bundled fallback** — the schemas baked into the browser app live in `src/schemas/`. Add files there and update the schema-name list in `src/pages/AdamantMain.jsx`, then rebuild (`npm run build`).
+> - **Server / Docker deployment**, drop `.json` files into `backend/schemas/` at the root of the repository. No restart needed if that folder is a mounted Docker volume (the default `docker-compose.yml` setup); otherwise restart the back-end container.
+> - **Offline/bundled fallback**, the schemas baked into the browser app live in `src/schemas/`. Add files there and update the schema-name list in `src/pages/AdamantMain.jsx`, then rebuild (`npm run build`).
 
 ### 2.3 Browsing a Local File
 
@@ -97,11 +101,11 @@ Open the schema selector and click **Load schema from URL…**.
 
 ![Load schema from URL dialog](screenshots/20_load_schema_from_url_dialog.png)
 
-Paste the direct URL to a `.json` schema file and click **Continue**. Adamant fetches it through the back-end and renders the form — handy for sharing a schema by link instead of a file attachment.
+Paste the direct URL to a `.json` schema file and click **Continue**. Adamant fetches it through the back-end and renders the form, handy for sharing a schema by link instead of a file attachment.
 
 ### 2.5 Loading from NextCloud or eLabFTW
 
-Once you're connected to NextCloud and/or eLabFTW (see [Section 10](#10-connecting-external-services)), their groups in the schema selector become active — hovering them reveals recently-seen schema names plus a **Browse…** action that opens a folder/item picker for that service.
+Once you're connected to NextCloud and/or eLabFTW (see [Section 10](#10-connecting-external-services)), their groups in the schema selector become active, hovering them reveals recently-seen schema names plus a **Browse…** action that opens a folder/item picker for that service.
 
 ![Schema selector with all services connected](screenshots/26_schema_dropdown_connected.png)
 
@@ -123,17 +127,17 @@ Once a schema is loaded, Adamant renders it as an interactive form: each field b
 
 **What you see in normal (non-edit) mode:**
 
-- **Field label** — the human-readable name, from the schema's `title` keyword.
-- **Input widget** — a text box, number input, dropdown (`enum` fields), checkbox (`boolean`), or collapsible section (`object`/`array` types). Units placed in square brackets in a field's title (e.g. `Acceleration Voltage [kV]`) are shown as a subtle suffix inside the input.
-- **Helper text** — a description below each input, from the schema's `description` keyword.
-- **Schema header** — the schema's title, description, and a row of action buttons (edit mode toggle, upload input data, JSON viewer icon), covered in the next sections.
-- **Bottom bar** — **Download Schema/Data** and **Proceed**, covered in [Sections 8](#8-downloading-your-work) and [9](#9-reviewing-and-submitting-a-form).
+- **Field label**, the human-readable name, from the schema's `title` keyword.
+- **Input widget**, a text box, number input, dropdown (`enum` fields), checkbox (`boolean`), or collapsible section (`object`/`array` types). Units placed in square brackets in a field's title (e.g. `Acceleration Voltage [kV]`) are shown as a subtle suffix inside the input.
+- **Helper text**, a description below each input, from the schema's `description` keyword.
+- **Schema header**, the schema's title, description, and a row of action buttons (edit mode toggle, upload input data, JSON viewer icon), covered in the next sections.
+- **Bottom bar**, **Download Schema/Data** and **Proceed**, covered in [Sections 8](#8-downloading-your-work) and [9](#9-reviewing-and-submitting-a-form).
 
 ---
 
 ## 4. Viewing the Raw JSON Schema
 
-The small `{}` icon button in the schema header opens the **JSON Schema Viewer** — a read-only view of the raw JSON Schema behind the current form.
+The small `{}` icon button in the schema header opens the **JSON Schema Viewer**, a read-only view of the raw JSON Schema behind the current form.
 
 ![JSON Schema Viewer](screenshots/05_json_schema_viewer.png)
 
@@ -143,7 +147,7 @@ Use it to check the exact keywords on a field, inspect `$defs`/`definitions`, ve
 
 ## 5. Edit Mode
 
-Edit Mode lets you change the schema's structure — rename fields, add or remove them, change data types, adjust validation constraints. It does **not** touch the data you've already filled in.
+Edit Mode lets you change the schema's structure, rename fields, add or remove them, change data types, adjust validation constraints. It does **not** touch the data you've already filled in.
 
 Click **EDIT MODE: OFF** in the schema header to turn it on; it switches to **EDIT MODE: ON**.
 
@@ -166,7 +170,7 @@ The dialog has two sections. **Basic Descriptors** covers identity and labelling
 | Field Title | The human-readable label shown in the form. |
 | Field Description | Helper text shown below the input. |
 
-**Validation Related** adapts to the chosen **Field Data Type** — see [Section 11](#11-field-types-reference) for the full set of constraints available per type (min/max, pattern, format, enum, tuple items, and so on). A **Required** checkbox is available for every type.
+**Validation Related** adapts to the chosen **Field Data Type**, see [Section 11](#11-field-types-reference) for the full set of constraints available per type (min/max, pattern, format, enum, tuple items, and so on). A **Required** checkbox is available for every type.
 
 Click **SAVE** to apply, **CANCEL** to discard.
 
@@ -194,7 +198,7 @@ Set any validation constraints and click **ADD**.
 
 ### 5.3 Deleting a Field
 
-Click the **bin** icon next to a field. It's removed immediately. This can't be undone field-by-field — use the revert icon ([5.6](#56-undoing-your-changes)) to roll back everything at once.
+Click the **bin** icon next to a field. It's removed immediately. This can't be undone field-by-field, use the revert icon ([5.6](#56-undoing-your-changes)) to roll back everything at once.
 
 ### 5.4 Reordering Fields
 
@@ -202,7 +206,7 @@ Grab the **six-dot handle** on the left of a field and drag it up or down. The s
 
 ### 5.5 Editing the Schema Header
 
-The pencil icon next to the JSON viewer icon (visible only in Edit Mode) opens the schema-level editor — title, description, ID, and specification version, not any individual field.
+The pencil icon next to the JSON viewer icon (visible only in Edit Mode) opens the schema-level editor, title, description, ID, and specification version, not any individual field.
 
 ![Edit schema header dialog](screenshots/10_edit_schema_header_dialog.png)
 
@@ -238,14 +242,14 @@ Adamant validates each schema and its form data against the rules of whichever d
 
 **Draft-07**
 - `definitions` for reusable sub-schemas.
-- `$ref` siblings are silently ignored — only the referenced schema applies.
+- `$ref` siblings are silently ignored, only the referenced schema applies.
 - `exclusiveMinimum`/`exclusiveMaximum` are standalone numbers (this changed from Draft-04's boolean-modifier form back in Draft-06, and hasn't changed since).
 - `dependencies` for conditional required fields.
 - Tuple arrays use `items` as an array of schemas.
 
 **Draft 2019-09**
 - `$defs` replaces `definitions` (both are still accepted).
-- `$ref` siblings are honoured — the referenced schema and any sibling keywords are merged together.
+- `$ref` siblings are honoured, the referenced schema and any sibling keywords are merged together.
 - `dependencies` splits into `dependentRequired` and `dependentSchemas`.
 - `unevaluatedProperties` is introduced, for closing an object built out of `allOf`/`anyOf`/`oneOf`.
 - Tuple arrays still use `items` as an array, same as Draft-07.
@@ -258,7 +262,7 @@ Adamant validates each schema and its form data against the rules of whichever d
 
 ![2020-12 schema loaded](screenshots/23_dialect_2020_12_loaded.png)
 
-Switching the `$schema` dropdown to a different dialect does not automatically rewrite your schema's keywords for you — pick the dialect that matches how the schema is actually written, or update the keywords yourself to match the dialect you choose.
+Switching the `$schema` dropdown to a different dialect does not automatically rewrite your schema's keywords for you, pick the dialect that matches how the schema is actually written, or update the keywords yourself to match the dialect you choose.
 
 ---
 
@@ -270,7 +274,7 @@ To reload form data saved from an earlier session, click **upload input data** i
 
 | Option | Source |
 |---|---|
-| **Local file** | Always available — pick a `.json` data file from your computer. |
+| **Local file** | Always available, pick a `.json` data file from your computer. |
 | **NextCloud** | Pick a data file from your connected NextCloud folder. |
 | **eLabFTW** / **eLabFTW (external)** | Pick a data file attached to an eLabFTW experiment. |
 
@@ -278,7 +282,7 @@ The service options are disabled until you connect that service (see [Section 10
 
 ![Upload input data menu, connected](screenshots/25_upload_input_data_menu_connected.png)
 
-The data must have been created with the *same* schema — matching fields are filled in; anything else is ignored.
+The data must have been created with the *same* schema, matching fields are filled in; anything else is ignored.
 
 ---
 
@@ -291,7 +295,7 @@ Click **Download Schema/Data** at the bottom of the form.
 | Option | What you get |
 |---|---|
 | **Download JSON Schema** | The current schema, including any Edit Mode changes, as a `.json` file. |
-| **Download JSON Data** | The data you filled in, as a `.json` file — reload it later with **Upload Input Data**. |
+| **Download JSON Data** | The data you filled in, as a `.json` file, reload it later with **Upload Input Data**. |
 | **Download Description List** | An HTML-formatted summary of every field and its value, handy for pasting into lab notebooks or reports. |
 
 ---
@@ -309,7 +313,16 @@ Fix the highlighted fields and click **Proceed** again. Once everything validate
 ![Form review dialog](screenshots/15_proceed_review_dialog.png)
 
 - Click **CANCEL** to go back and make corrections.
-- Click **SUBMIT** to continue — depending on how Adamant is configured and which services you're connected to, you may be offered options such as creating an eLabFTW experiment or uploading the dataset to NextCloud.
+- Click **SUBMIT** to continue, depending on how Adamant is configured and which services you're connected to, you may be offered options such as creating an eLabFTW experiment or uploading the dataset to NextCloud.
+
+**Uploading to NextCloud:** after choosing **Submit Dataset to NextCloud** and picking a destination folder, a **Confirm the file names** dialog opens with two editable fields before anything is actually sent:
+
+| Field | Default value | Behavior |
+|---|---|---|
+| **File name** | The form's `URN` field value, sanitized into a filesystem-safe name (or `metadata` if the schema has no `URN` field) | Edit freely, this becomes the metadata `.json` file's name. |
+| **Schema file name** | The file name above with `-schema` appended | Mirrors the file name above as you edit it, until you edit this field directly, from then on your own choice is kept, even if you go back and change the file name again. |
+
+Click **Upload** to send both files, plus any attached resource files, to the chosen NextCloud folder.
 
 ---
 
@@ -331,11 +344,11 @@ Click **eLabFTW**.
 
 ![eLabFTW login dialog](screenshots/17_elabftw_login_dialog.png)
 
-The server URL is pre-configured by whoever deployed Adamant for your institution — you only enter your **email** and your **eLabFTW API token** (generate one from your eLabFTW profile under *API keys*; see the *More info* link in the dialog). Click **CONTINUE**.
+The server URL is pre-configured by whoever deployed Adamant for your institution, you only enter your **email** and your **eLabFTW API token** (generate one from your eLabFTW profile under *API keys*; see the *More info* link in the dialog). Click **CONTINUE**.
 
 ### 10.2 eLabFTW (External Instance)
 
-Click **eLabFTW (external)** to connect a *different* eLabFTW instance than the one your institution pre-configured — useful for collaborating with another lab.
+Click **eLabFTW (external)** to connect a *different* eLabFTW instance than the one your institution pre-configured, useful for collaborating with another lab.
 
 ![eLabFTW external login dialog](screenshots/18_elabftw_external_login_dialog.png)
 
@@ -347,20 +360,20 @@ Click **NextCloud**.
 
 ![NextCloud login dialog](screenshots/19_nextcloud_login_dialog.png)
 
-Like eLabFTW, the server URL is pre-configured by your institution. Enter your NextCloud **username** and an **app password** (not your account password) — generate one in NextCloud under *Settings → Security → Devices & sessions*, name it (e.g. "Adamant"), and click *Create new app password*. Click **CONTINUE**.
+Like eLabFTW, the server URL is pre-configured by your institution. Enter your NextCloud **username** and an **app password** (not your account password), generate one in NextCloud under *Settings → Security → Devices & sessions*, name it (e.g. "Adamant"), and click *Create new app password*. Click **CONTINUE**.
 
 ### 10.4 Remember Me
 
 Every connection dialog has a **"Remember me on this device"** checkbox.
 
-- **Unchecked (default)** — your login is kept only for the current browser session (it survives page reloads, but is cleared when the browser closes).
-- **Checked** — your login is kept in the browser's local storage and survives closing and reopening the browser, until you disconnect or uncheck it on a later login.
+- **Unchecked (default)**, your login is kept only for the current browser session (it survives page reloads, but is cleared when the browser closes).
+- **Checked**, your login is kept in the browser's local storage and survives closing and reopening the browser, until you disconnect or uncheck it on a later login.
 
-What's stored is always a revocable, scoped credential (an eLabFTW API token or a NextCloud app password), never your account password — so you can invalidate access at any time from that service's own security settings, regardless of what Adamant has stored locally. Logging out only ends the active connection; it does not erase a remembered username/token, so reconnecting later is a single click rather than retyping everything.
+What's stored is always a revocable, scoped credential (an eLabFTW API token or a NextCloud app password), never your account password, so you can invalidate access at any time from that service's own security settings, regardless of what Adamant has stored locally. Logging out only ends the active connection; it does not erase a remembered username/token, so reconnecting later is a single click rather than retyping everything.
 
 ### 10.5 Disconnecting
 
-Click the **×** on a service's chip in the top bar, or reopen its dialog — logging out clears the active connection but, per [10.4](#104-remember-me), keeps a remembered login ready for next time.
+Click the **×** on a service's chip in the top bar, or reopen its dialog, logging out clears the active connection but, per [10.4](#104-remember-me), keeps a remembered login ready for next time.
 
 ---
 
@@ -371,8 +384,8 @@ Click the **×** on a service's chip in the top bar, or reopen its dialog — lo
 | `string` | Text box (or dropdown if enumerated) | Min/max length, regex pattern, semantic format (`email`, `date-time`, `uri`, `uuid`, …), enumerated list |
 | `number` | Text box | Minimum/maximum, exclusive minimum/maximum, multiple of |
 | `integer` | Text box | Same as `number`, integer values only |
-| `boolean` | Checkbox | — |
-| `null` | — | Only valid value is `null` |
+| `boolean` | Checkbox |, |
+| `null` |, | Only valid value is `null` |
 | `object` | Collapsible section | Nested fields, each independently required/optional |
 | `array` | Repeatable list, or a fixed-position tuple | Min/max items, unique items; tuple mode gives each position its own type |
 | `fileupload (string)` | File picker | Adamant-specific; stores the selected file as a string value |
@@ -385,7 +398,7 @@ Every type also has a **Required** checkbox, and every field can carry a **Field
 
 **Can I use Adamant without a server?**
 
-Yes. Adamant runs entirely in the browser with no back-end required for form-filling and editing. Without a server connection the built-in schema list is limited to what's bundled into the app, and NextCloud/eLabFTW connections aren't available — everything else, including **Browse local file…**, works the same.
+Yes. Adamant runs entirely in the browser with no back-end required for form-filling and editing. Without a server connection the built-in schema list is limited to what's bundled into the app, and NextCloud/eLabFTW connections aren't available, everything else, including **Browse local file…**, works the same.
 
 **How do I save my work and come back later?**
 
@@ -397,7 +410,7 @@ Yes, with Edit Mode on: click **+ ADD ELEMENT** wherever you want the new field.
 
 **I made a mess in Edit Mode. Can I undo everything?**
 
-Click the clock/revert icon in the schema header (visible while Edit Mode is on) — see [Section 5.6](#56-undoing-your-changes).
+Click the clock/revert icon in the schema header (visible while Edit Mode is on), see [Section 5.6](#56-undoing-your-changes).
 
 **Which field types does Adamant support?**
 
@@ -405,11 +418,11 @@ Click the clock/revert icon in the schema header (visible while Edit Mode is on)
 
 **My schema uses `$ref`. Will Adamant handle it?**
 
-For references within the same document (`#/$defs/...`, `#/definitions/...`), yes — Adamant resolves and renders them, and merges sibling keywords for 2019-09/2020-12 schemas as the spec requires (ignoring them for Draft-07, also per spec). References to *external* documents (a `$ref` pointing at a separate URL or file) are not resolved.
+For references within the same document (`#/$defs/...`, `#/definitions/...`), yes, Adamant resolves and renders them, and merges sibling keywords for 2019-09/2020-12 schemas as the spec requires (ignoring them for Draft-07, also per spec). References to *external* documents (a `$ref` pointing at a separate URL or file) are not resolved.
 
 **Is "Remember me" safe to use?**
 
-See [Section 10.4](#104-remember-me). It only ever stores a revocable API token or app password — never your account password — and is opt-in per connection.
+See [Section 10.4](#104-remember-me). It only ever stores a revocable API token or app password, never your account password, and is opt-in per connection.
 
 **I see "Connection to server is established" in a green notification. What does that mean?**
 

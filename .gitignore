@@ -11,3 +11,7 @@ JSON-schema-test/
 # local secrets - never commit
 .env
 .env.*
+/src/local-conf.json
+
+# local tool worktrees
+.kilo/

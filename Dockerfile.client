@@ -1,13 +1,15 @@
 # Build step #1: build the React front end
-FROM node:22-alpine as build-step
+FROM node:22-alpine AS build-step
 WORKDIR /app
-ENV PATH /app/node_modules/.bin:$PATH
 COPY package.json package-lock.json ./
+RUN npm ci --legacy-peer-deps
 COPY ./src ./src
 COPY ./public ./public
-COPY vite.config.js ./
-COPY index.html ./
-RUN npm install --legacy-peer-deps
+COPY vite.config.js index.html ./
+# src/local-conf.json holds deployment-specific values (institution URLs, folder paths) and
+# is gitignored, so it's only in the build context if placed there beforehand (see README).
+# Fall back to the placeholder template so the build always succeeds.
+RUN test -f src/local-conf.json || cp src/local-conf.example.json src/local-conf.json
 RUN npm run build
 
 # Build step #2: build an nginx container

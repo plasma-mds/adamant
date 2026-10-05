@@ -1,7 +1,4 @@
 {
-    "local-elab-url": "https://yourelabftw-instance.com",
-    "nextcloud-url": "https://yournextcloud-instance.com",
     "usecase-dialog": false,
-    "elab-internal-schemas-folder-name": "Schemas-test",
-    "nextcloud-schemas-folder-path": "nextcloud/schemas/folder/path"
+    "nextcloud-filename-field": "URN"
 }

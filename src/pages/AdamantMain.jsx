@@ -35,7 +35,7 @@ import SchemaSeven from "../schemas/demo-schema-2020-12.json";
 import SchemaEight from "../schemas/demo-schema-draft-07.json";
 import fillValueWithEmptyString from "../components/utils/fillValueWithEmptyString";
 import convData2FormData from "../components/utils/convData2FormData";
-import findFieldValueByKey from "../components/utils/findFieldValueByKey";
+import findFieldValueByNameOrTitle from "../components/utils/findFieldValueByNameOrTitle";
 import sanitizeFilename from "../components/utils/sanitizeFilename";
 import FormReviewBeforeSubmit from "../components/FormReviewBeforeSubmit";
 import changeKeywords from "../components/utils/changeKeywords";
@@ -56,7 +56,7 @@ import ELabFTWBrowseDialog from "../components/ELabFTWBrowseDialog";
 import LoadSchemaFromUrlDialog from "../components/LoadSchemaFromUrlDialog";
 
 import AdamantVersion from "../assets/adamant_version.json";
-import GeneralConfig from "../general-conf.json"
+import GeneralConfig from "../appConfig"
 import { getRemembered, setRemembered, isRemembered } from "../components/utils/rememberableStorage";
 
 // to create a bundle (download dataset+metadata as .zip)
@@ -798,17 +798,10 @@ const AdamantMain = () => {
   // after picking a NextCloud destination folder, derive a filename from the form's "URN"
   // field (if any) and let the user confirm/edit it before the actual upload happens
   const handleNextCloudFolderSelected = (targetPath) => {
-    let convSchemaData = { ...convertedSchema };
-    let content = convData2FormData(
-      JSON.parse(JSON.stringify(convSchemaData["properties"]))
-    );
-    content = removeEmpty(content);
-    if (content === undefined) {
-      content = {};
-    }
-
-    const urnValue = findFieldValueByKey(content, "URN");
-    const derivedName = sanitizeFilename(urnValue) || "metadata";
+    const properties = JSON.parse(JSON.stringify(convertedSchema["properties"]));
+    const filenameField = GeneralConfig["nextcloud-filename-field"];
+    const filenameValue = findFieldValueByNameOrTitle(properties, filenameField);
+    const derivedName = sanitizeFilename(filenameValue) || "metadata";
 
     setNcUploadTargetPath(targetPath);
     setNcUploadFilename(`${derivedName}.json`);

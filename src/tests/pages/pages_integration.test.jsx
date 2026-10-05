@@ -842,6 +842,59 @@ describe('Page Integration and Error Boundary Flows', () => {
       expect(uploadCall.data.get('schemaFilename')).toBe('custom-name-schema.json');
     });
 
+    it('names the NextCloud file from the configured field even when its schema key differs from its title', async () => {
+      window.sessionStorage.setItem('ncLoginState', 'true');
+      window.sessionStorage.setItem('ncDisplayName', 'Test User');
+      window.sessionStorage.setItem('ncUrl', 'https://nextcloud.example.com');
+      window.sessionStorage.setItem('ncUsername', 'testuser');
+      window.sessionStorage.setItem('ncAppPassword', 'secret');
+
+      render(
+        <MemoryRouter>
+          <AdamantMain />
+        </MemoryRouter>
+      );
+
+      setupOfflineMode($);
+
+      const input = document.getElementById('select-available-schema');
+      fireEvent.mouseDown(input);
+      fireEvent.click(await screen.findByText('Load schema from URL...'));
+      fireEvent.change(await screen.findByPlaceholderText('https://example.com/schema.json'), {
+        target: { value: 'https://example.com/pid-schema.json' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: /Continue/i }));
+
+      const loadCall = $.ajax.mock.calls.map(([o]) => o).find((o) => o.url === '/api/load_schema_from_url');
+      act(() => {
+        loadCall.success({
+          status: 200,
+          schema: {
+            $schema: 'http://json-schema.org/draft-07/schema#',
+            title: 'PID Test Schema',
+            type: 'object',
+            properties: {
+              pid_identifier: { type: 'string', title: 'URN' },
+            },
+          },
+        });
+      });
+
+      expect(await screen.findByText('PID Test Schema')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.queryByPlaceholderText('https://example.com/schema.json')).not.toBeInTheDocument();
+      });
+
+      fillFormField(/^URN$/i, 'urn:sample/2024:02');
+
+      fireEvent.click(screen.getByRole('button', { name: /^Proceed$/i }));
+      fireEvent.click(await screen.findByRole('button', { name: /^Submit$/i }));
+      fireEvent.click(await screen.findByText('Submit Dataset to NextCloud'));
+      fireEvent.click(await screen.findByRole('button', { name: /Select this folder/i }));
+
+      expect(await screen.findByDisplayValue('urn-sample-2024-02.json')).toBeInTheDocument();
+    });
+
     it('stops auto-syncing the schema file name once the user edits it directly', async () => {
       window.sessionStorage.setItem('ncLoginState', 'true');
       window.sessionStorage.setItem('ncDisplayName', 'Test User');

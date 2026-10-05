@@ -8,7 +8,7 @@ import convertedSchemaPropertiesSort from '../../components/utils/convertedSchem
 import changeKeywords from '../../components/utils/changeKeywords';
 import nicelySort from '../../components/utils/nicelySort';
 import checkIDexistence from '../../components/utils/checkIDexistence';
-import findFieldValueByKey from '../../components/utils/findFieldValueByKey';
+import findFieldValueByNameOrTitle from '../../components/utils/findFieldValueByNameOrTitle';
 import sanitizeFilename from '../../components/utils/sanitizeFilename';
 
 describe('Utility Functions - Core Helper Logic', () => {
@@ -207,19 +207,28 @@ describe('Utility Functions - Core Helper Logic', () => {
         });
     });
 
-    describe('findFieldValueByKey', () => {
-        it('finds a top-level value by key, case-insensitively', () => {
-            expect(findFieldValueByKey({ URN: 'urn:test:1' }, 'URN')).toBe('urn:test:1');
-            expect(findFieldValueByKey({ urn: 'urn:test:2' }, 'URN')).toBe('urn:test:2');
+    describe('findFieldValueByNameOrTitle', () => {
+        it('matches a field by its key or its title, case-insensitively', () => {
+            const props = [
+                { fieldKey: 'URN', title: 'Identifier', value: 'urn:by-key' },
+                { fieldKey: 'pid', title: 'URN', value: 'urn:by-title' },
+            ];
+            expect(findFieldValueByNameOrTitle(props, 'urn')).toBe('urn:by-key');
+            expect(findFieldValueByNameOrTitle([props[1]], 'URN')).toBe('urn:by-title');
         });
 
-        it('finds a value nested inside objects and arrays', () => {
-            const data = { SEMParameters: { nested: [{ URN: 'urn:nested:1' }] } };
-            expect(findFieldValueByKey(data, 'URN')).toBe('urn:nested:1');
+        it('finds a value nested inside object properties', () => {
+            const props = [
+                { fieldKey: 'SEMParameters', title: 'SEM', type: 'object', properties: [
+                    { fieldKey: 'URN', title: 'URN', value: 'urn:nested:1' },
+                ] },
+            ];
+            expect(findFieldValueByNameOrTitle(props, 'URN')).toBe('urn:nested:1');
         });
 
-        it('returns undefined when the key is not present anywhere', () => {
-            expect(findFieldValueByKey({ foo: 'bar' }, 'URN')).toBeUndefined();
+        it('returns undefined when no field matches or the value is an object', () => {
+            expect(findFieldValueByNameOrTitle([{ fieldKey: 'foo', title: 'bar', value: 'x' }], 'URN')).toBeUndefined();
+            expect(findFieldValueByNameOrTitle([{ fieldKey: 'URN', title: 'URN', value: {} }], 'URN')).toBeUndefined();
         });
     });
 

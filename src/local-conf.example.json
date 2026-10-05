@@ -1,0 +1,6 @@
+{
+    "local-elab-url": "https://your-elabftw-instance.example.org",
+    "nextcloud-url": "https://your-nextcloud-instance.example.org",
+    "elab-internal-schemas-folder-name": "Schemas",
+    "nextcloud-schemas-folder-path": "path/to/schemas"
+}

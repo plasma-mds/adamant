@@ -1,0 +1,15 @@
+.git
+**/node_modules
+dist
+docs
+graphify-out
+scratch
+JSON-schema-test
+test_out.txt
+backend/venv
+backend/__pycache__
+backend/temp-files
+backend/conf
+.env
+.env.*
+.kilo/

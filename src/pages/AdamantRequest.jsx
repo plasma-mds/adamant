@@ -45,7 +45,7 @@ import LDAPLoginDialog from "../components/LDAPLoginDialog";
 import DatasetSubmissionDialog from "../components/DatasetSubmissionDialog";
 
 import AdamantVersion from "../assets/adamant_version.json";
-import GeneralConfig from "../general-conf.json"
+import GeneralConfig from "../appConfig"
 
 // to create a bundle (download dataset+metadata as .zip)
 import JSZip from "jszip";

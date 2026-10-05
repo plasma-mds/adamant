@@ -21,6 +21,13 @@ import nextcloud_utils
 
 app = Flask(__name__, static_folder='../build', static_url_path='/')  # for Gunicorn deployment
 # app = Flask(__name__)
+# Flask's default JSON provider alphabetically re-sorts every dict key on serialization
+# (sort_keys=True by default). Endpoints that round-trip a schema/data file through
+# json.loads() and return the resulting dict (e.g. nextcloud_read, elab_schemas_read) would
+# otherwise come back with every object's property order scrambled, unlike a locally-browsed
+# file (parsed client-side, never touches this) or the schema list (served as raw text,
+# never re-parsed into a dict here).
+app.json.sort_keys = False
 api = Api(app)
 
 TEMP_FILES_DIR = 'temp-files'

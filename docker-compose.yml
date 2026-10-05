@@ -1,20 +1,24 @@
-version: '3'
-
 services:
-# back-end
+  # back-end (not published to the host; only the client's nginx reaches it, at http://api:5000)
   api:
     build:
       context: .
       dockerfile: Dockerfile.server
     image: adamant-server
+    restart: unless-stopped
     volumes:
       - ./backend/conf:/app/conf
       - ./backend/schemas:/app/schemas
- # front-end 
+
+  # front-end
   client:
     build:
       context: .
       dockerfile: Dockerfile.client
     image: adamant-client
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
     ports:
       - "3000:80"

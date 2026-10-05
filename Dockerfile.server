@@ -1,14 +1,21 @@
 FROM python:3.12
 WORKDIR /app
-RUN mkdir ./schemas
-RUN mkdir ./temp-files
-RUN mkdir ./conf
+ENV PYTHONUNBUFFERED=1
 
-COPY backend/requirements.txt backend/api.py backend/utils.py backend/mime-types-extensions.json backend/.flaskenv ./
-COPY backend/schemas/ ./schemas/
-RUN ls -la ./schemas/*
+COPY backend/requirements.txt ./
 RUN pip install --no-cache-dir -r ./requirements.txt
-ENV FLASK_ENV production
+
+COPY backend/api.py backend/utils.py backend/nextcloud_utils.py backend/mime-types-extensions.json ./
+COPY backend/schemas/ ./schemas/
+RUN useradd --system --no-create-home adamant \
+    && mkdir ./temp-files ./conf \
+    && chown adamant ./temp-files
+USER adamant
 
 EXPOSE 5000
-CMD ["gunicorn", "-b", ":5000", "api:app"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/api/check_mode', timeout=4)" || exit 1
+
+# Keep a single worker: api.py writes fixed filenames under temp-files/ and clears that
+# directory after each request, so concurrent workers would overwrite each other's files.
+CMD ["gunicorn", "-b", ":5000", "--workers", "1", "--timeout", "300", "api:app"]

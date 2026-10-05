@@ -54,7 +54,7 @@ import EditExperiment from "../components/EditExperiment";
 import fillForm from "../components/utils/fillForm";
 
 import AdamantVersion from "../assets/adamant_version.json"
-import GeneralConfig from "../general-conf.json"
+import GeneralConfig from "../appConfig"
 import { getRemembered, setRemembered, isRemembered } from "../components/utils/rememberableStorage";
 
 // function that receive the schema and convert it to Form/json data blueprint

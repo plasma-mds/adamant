@@ -48,7 +48,7 @@ import validateSchemaAgainstSpecification from "../components/utils/validateSche
 import LDAPLoginDialog from "../components/LDAPLoginDialog";
 import DatasetSubmissionDialog from "../components/DatasetSubmissionDialog";
 import AdamantVersion from "../assets/adamant_version.json";
-import GeneralConfig from "../general-conf.json";
+import GeneralConfig from "../appConfig";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import FilesDialog from "../components/FilesDialog";
