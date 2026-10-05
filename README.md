@@ -23,36 +23,45 @@ Accompanying article can be found at: https://f1000research.com/articles/11-475/
 
 # Changelog
 
+## [1.4.1] October 5, 2026
+### Added
+- NextCloud metadata file named from a configurable schema field (`nextcloud-filename-field`, default `URN`), with a `metadata` fallback.
+- Editable schema file name on NextCloud upload.
+- Loading indicator for slow NextCloud/eLabFTW lookups, schema rendering, and uploads.
+- Upload input data can read from NextCloud and eLabFTW (internal and external).
+
+### Changed
+- Docker: non-root API container with health check, client starts after the API is healthy, 300-second timeouts.
+- Schema search clears on reopen; connected services are shown in a distinct color.
+
 ## [1.4.0] September 9, 2026
-- Full JSON Schema dialect support for Draft-07, 2019-09, and 2020-12 across form rendering, schema editing, and validation (resolves [#4](https://github.com/plasma-mds/adamant/issues/4); 2020-12 included as additional dialect beyond the original issue scope).
-- Support for `null` type fields in schema rendering and editing.
-- NextCloud integration: connect, browse, and upload/download schemas and datasets.
-- Connect to an external eLabFTW instance in addition to the pre-configured one, from a single "Connect with eLabFTW" dialog; only one eLabFTW connection is active at a time.
-- "Load schema from URL" to fetch a schema directly by link.
-- Optional "Remember me" on NextCloud/eLabFTW logins, keeping the connection across browser restarts and through logout/reconnect.
-- "Create eLabFTW Experiment" now defaults to whichever eLabFTW instance is currently connected.
-- Schema-specification validation now enforces the same strict keyword checks across all dialects and no longer crashes on unknown dialects.
-- Fixed invalid Draft-04-style `exclusiveMinimum`/`exclusiveMaximum` usage in the Draft-07 demo schema.
-- Resolved all `npm audit` security advisories.
+- Draft-07, 2019-09, and 2020-12 dialect support across rendering, editing, and validation ([#4](https://github.com/plasma-mds/adamant/issues/4)).
+- `null` type field support.
+- NextCloud integration: connect, browse, upload, and download.
+- External eLabFTW connection alongside the internal one.
+- "Load schema from URL".
+- Optional "Remember me" for NextCloud and eLabFTW logins.
+- "Create eLabFTW Experiment" uses the currently connected instance.
+- Stricter schema-specification validation; no crash on unknown dialects.
+- Fixed Draft-04-style `exclusiveMinimum`/`exclusiveMaximum` in the Draft-07 demo schema.
+- All `npm audit` advisories resolved.
 
 ## [1.3.2] May 11, 2026
 ### Fixed
 - Critical security fixes.
-- Migrated frontend build system to Vite for improved performance and security.
-- Replaced file upload icon with text-based "UPLOAD INPUT DATA" button for better accessibility.
-- Data persistence bug in NumberType and IntegerType where cleared fields were not removed from form state and hence old values were sent to the backend.
-- Docker related files updated.
-
-### Minor changes
-- Updated `demo-schema.json` and `plasma-mds.json` to `draft-7` specification.
+- Data persistence bug in NumberType/IntegerType: cleared fields are removed from form state.
+### Changed
+- Migrated the frontend build to Vite.
+- "UPLOAD INPUT DATA" text button replaces the icon.
+- Docker files updated.
+- `demo-schema.json` and `plasma-mds.json` moved to `draft-7`.
 
 ## [1.3.1] December 17, 2025
 ### Fixed
-- Assign "Running" status to a new experiment created with Adamant
-- Update experiment is fixed
+- New experiments are created with "Running" status.
+- Update experiment fixed.
 ### Note
-- Backend `api.py` works with [eLabFTW v5.3.10](https://www.deltablot.com/posts/release-50300/)
-
+- Backend `api.py` works with [eLabFTW v5.3.10](https://www.deltablot.com/posts/release-50300/).
 
 
 # Main use cases

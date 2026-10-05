@@ -2,7 +2,7 @@
 
 Adamant is a browser-based tool that turns a JSON Schema file into a structured web form. You fill in the form, Adamant validates your inputs in real time, and when you are satisfied you download the filled-in data or send it directly to a connected NextCloud or eLabFTW account. No programming knowledge is needed to use it.
 
-This guide walks through every feature of the current version (Adamant v1.4.0), step by step, from opening the tool to submitting a finished metadata record.
+This guide walks through every feature of the current version (Adamant v1.4.1), step by step, from opening the tool to submitting a finished metadata record.
 
 ---
 
