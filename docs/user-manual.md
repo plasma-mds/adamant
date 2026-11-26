@@ -1,61 +1,40 @@
 # Adamant User Manual
 
-Adamant is a browser-based tool that turns a JSON Schema file into a structured web form. You fill in the form, Adamant validates your inputs in real time, and when you are satisfied you download the filled-in data or send it directly to a connected NextCloud or eLabFTW account. No programming knowledge is needed to use it.
+Adamant turns a metadata schema into a web form. You pick a schema, fill in the form, and Adamant checks your entries as you go. When you are done, you can download your data or send it straight to NextCloud or eLabFTW.
 
-This guide walks through every feature of the current version (Adamant v1.4.1), step by step, from opening the tool to submitting a finished metadata record.
+This manual covers Adamant v1.4.1.
 
 ---
 
-## Table of Contents
+## Contents
 
-1. [The Main Screen](#1-the-main-screen)
+1. [Getting Started](#1-getting-started)
 2. [Loading a Schema](#2-loading-a-schema)
-   - [The Schema Selector](#21-the-schema-selector)
-   - [Built-in Schemas](#22-built-in-schemas)
-   - [Browsing a Local File](#23-browsing-a-local-file)
-   - [Loading a Schema from a URL](#24-loading-a-schema-from-a-url)
-   - [Loading from NextCloud or eLabFTW](#25-loading-from-nextcloud-or-elabftw)
-   - [Creating a Schema from Scratch](#26-creating-a-schema-from-scratch)
-3. [The Form Interface](#3-the-form-interface)
-4. [Viewing the Raw JSON Schema](#4-viewing-the-raw-json-schema)
-5. [Edit Mode](#5-edit-mode)
-   - [Editing a Field](#51-editing-a-field)
-   - [Adding a New Field](#52-adding-a-new-field)
-   - [Deleting a Field](#53-deleting-a-field)
-   - [Reordering Fields](#54-reordering-fields)
-   - [Editing the Schema Header](#55-editing-the-schema-header)
-   - [Undoing Your Changes](#56-undoing-your-changes)
-6. [Supported JSON Schema Specifications](#6-supported-json-schema-specifications)
-7. [Uploading Pre-filled Data](#7-uploading-pre-filled-data)
-8. [Downloading Your Work](#8-downloading-your-work)
-9. [Reviewing and Submitting a Form](#9-reviewing-and-submitting-a-form)
-10. [Connecting External Services](#10-connecting-external-services)
-    - [eLabFTW (Your Institution's Instance)](#101-elabftw-your-institutions-instance)
-    - [eLabFTW (External Instance)](#102-elabftw-external-instance)
-    - [NextCloud](#103-nextcloud)
-    - [Remember Me](#104-remember-me)
-    - [Disconnecting](#105-disconnecting)
-11. [Field Types Reference](#11-field-types-reference)
-12. [Frequently Asked Questions](#12-frequently-asked-questions)
+3. [Filling In the Form](#3-filling-in-the-form)
+4. [Saving and Restoring Your Work](#4-saving-and-restoring-your-work)
+5. [Reviewing and Submitting](#5-reviewing-and-submitting)
+6. [Editing a Schema](#6-editing-a-schema)
+7. [Connecting NextCloud and eLabFTW](#7-connecting-nextcloud-and-elabftw)
+8. [Field Types](#8-field-types)
 
 ---
 
-## 1. The Main Screen
+## 1. Getting Started
 
-When you open Adamant you land on the home screen. Everything starts from one row near the top of the page.
+When you open Adamant, you see the home screen.
 
-![Home screen](screenshots/01_home.png)
+<img src="screenshots/01_home.png" alt="Home screen" width="640">
 
 | Element | What it does |
 |---|---|
-| **Select existing schema** (dropdown) | Opens the schema selector, built-in schemas, a local file, a URL, or schemas from a connected NextCloud/eLabFTW account. See [Section 2](#2-loading-a-schema). |
-| **CREATE FROM SCRATCH** | Starts with a completely empty schema that you build yourself inside the app. |
-| **HOME** (top right) | Reloads the page and discards the current schema. |
-| **CONNECT** (top right) | Opens the menu to connect NextCloud or eLabFTW accounts. See [Section 10](#10-connecting-external-services). |
+| **Select existing schema** | Choose the schema you want to fill in. See [Section 2](#2-loading-a-schema). |
+| **CREATE FROM SCRATCH** | Start with an empty schema and build your own form. |
+| **HOME** (top right) | Reloads the page. The current form and any unsaved entries are cleared. |
+| **CONNECT** (top right) | Connect your NextCloud or eLabFTW account. See [Section 7](#7-connecting-nextcloud-and-elabftw). |
 
-A green **"Connection to server is established"** notification in the bottom-right corner means Adamant reached its back-end API, this enables the full built-in schema list and the NextCloud/eLabFTW integrations. If you don't see it, Adamant is running in offline mode; everything except connecting to NextCloud/eLabFTW still works, including uploading your own schema files.
+**Status messages.** A green message, *"Connection to server is established"*, appears in the bottom-right corner when Adamant is fully available. If you instead see *"Unable to establish connection to server"*, Adamant is running in a limited mode: you can still load the built-in schemas or a file from your computer, fill in and edit forms, and download your work, but you cannot connect to NextCloud or eLabFTW, load a schema from a URL, or submit.
 
-A small **"Loading…"** badge with a spinner appears in the same bottom-right corner whenever Adamant is waiting on something that can take a moment, hovering NextCloud or eLabFTW in the schema selector while their file list is fetched, loading and rendering a schema, or uploading a dataset to NextCloud. It disappears on its own once the operation finishes.
+**Loading indicator.** A small *"Loading..."* badge appears in the bottom-right corner while Adamant is busy, for example while fetching a list of schemas or uploading files. It disappears on its own when the task is finished.
 
 ---
 
@@ -63,373 +42,313 @@ A small **"Loading…"** badge with a spinner appears in the same bottom-right c
 
 ### 2.1 The Schema Selector
 
-Click the **Select existing schema** dropdown. It organizes every way of getting a schema into one searchable list, grouped by source:
+Click **Select existing schema**. The list is grouped by where the schema comes from:
 
-![Schema selector open](screenshots/02_schema_dropdown_open.png)
-
-| Group | Contents |
+| Group | What it contains |
 |---|---|
-| **Default** | The schemas bundled with (or served by) Adamant. Hover the group to expand it. |
-| **NextCloud** | Schemas from your connected NextCloud folder, plus a "Browse NextCloud…" action. Muted until you connect. |
-| **eLabFTW** | Schemas from your institution's connected eLabFTW account, plus a "Browse eLabFTW…" action. Muted until you connect. |
-| **eLabFTW (external)** | A "Browse eLabFTW (external)…" action for a separate, custom eLabFTW instance you connect yourself. Muted until you connect. |
-| **Browse** | Two always-available actions: **Browse local file…** and **Load schema from URL…**. |
+| **Default** | Example schemas that come with Adamant. |
+| **NextCloud** | Schemas from your NextCloud account, plus **Browse NextCloud...** |
+| **eLabFTW** | Schemas from your eLabFTW account, plus **Browse eLabFTW...** |
+| **Browse local file...** | Opens a schema file from your computer. |
+| **Load schema from URL...** | Opens a schema from a web link. |
 
-Once a service is connected, its group name switches from a muted gray to a bolder color so you can tell at a glance which services are active.
+Hover over a group name to see its contents. The NextCloud and eLabFTW groups appear grayed out until you connect that account, and turn bold once you are connected.
 
-You can also just type, the box filters across every group as you go. Reopening the dropdown always clears the search box first, so every schema is visible again rather than staying filtered down to whatever you'd previously picked.
+You can also type into the box to search across all groups. Each time you reopen the list, the search is cleared so that every schema is shown again.
 
-### 2.2 Built-in Schemas
+### 2.2 Example Schemas
 
-Hover **Default** to expand its list, then click a schema name to load it.
+Hover over **Default** and click a schema name to load it.
 
-![Default group expanded](screenshots/03_schema_dropdown_default_group.png)
+<img src="screenshots/03_schema_dropdown_default_group.png" alt="Default group expanded" width="640">
 
-The list comes from Adamant's back-end (`backend/schemas/`) when a server connection is available, or from the schemas bundled into the browser app otherwise. Either way you get the same demo schemas, useful for exploring what Adamant can do.
+These example schemas are a good way to try out Adamant. Your institution may have added its own schemas to this list.
 
-> **Deploying your own schemas?**
-> - **Server / Docker deployment**, drop `.json` files into `backend/schemas/` at the root of the repository. No restart needed if that folder is a mounted Docker volume (the default `docker-compose.yml` setup); otherwise restart the back-end container.
-> - **Offline/bundled fallback**, the schemas baked into the browser app live in `src/schemas/`. Add files there and update the schema-name list in `src/pages/AdamantMain.jsx`, then rebuild (`npm run build`).
+### 2.3 A File from Your Computer
 
-### 2.3 Browsing a Local File
+Click **Browse local file...** and choose a `.json` schema file. If the file is not a valid schema, Adamant shows an error message instead of a form.
 
-Open the schema selector and click **Browse local file…**. Your operating system's file picker opens; choose a `.json` file containing a valid JSON Schema. If the file is invalid, Adamant shows a validation message instead of rendering a form.
+### 2.4 A Schema from a Web Link
 
-### 2.4 Loading a Schema from a URL
+Click **Load schema from URL...**.
 
-Open the schema selector and click **Load schema from URL…**.
+<img src="screenshots/20_load_schema_from_url_dialog.png" alt="Load schema from URL dialog" width="640">
 
-![Load schema from URL dialog](screenshots/20_load_schema_from_url_dialog.png)
+Paste the link to the schema file and click **Continue**. This is useful when a colleague shares a schema as a link rather than as a file.
 
-Paste the direct URL to a `.json` schema file and click **Continue**. Adamant fetches it through the back-end and renders the form, handy for sharing a schema by link instead of a file attachment.
+### 2.5 From NextCloud or eLabFTW
 
-### 2.5 Loading from NextCloud or eLabFTW
+After you connect an account (see [Section 7](#7-connecting-nextcloud-and-elabftw)), hover over its group to see the schemas available there. To look through your folders or experiments yourself, click **Browse NextCloud...** or **Browse eLabFTW...**.
 
-Once you're connected to NextCloud and/or eLabFTW (see [Section 10](#10-connecting-external-services)), their groups in the schema selector become active, hovering them reveals recently-seen schema names plus a **Browse…** action that opens a folder/item picker for that service.
+If you connected a different eLabFTW instance than your institution's, use **Browse eLabFTW...** to find your schema.
 
-![Schema selector with all services connected](screenshots/26_schema_dropdown_connected.png)
+<!-- Screenshot to retake: schema selector with NextCloud and eLabFTW connected (groups shown in bold). -->
 
-### 2.6 Creating a Schema from Scratch
+### 2.6 Starting from Scratch
 
-Click **CREATE FROM SCRATCH**. Adamant creates an empty schema object and turns Edit Mode on automatically so you can start adding fields right away.
+Click **CREATE FROM SCRATCH**. Adamant opens an empty form with Edit Mode already switched on, so you can start adding fields straight away.
 
-![Create from scratch mode](screenshots/21_create_from_scratch.png)
+<img src="screenshots/21_create_from_scratch.png" alt="Create from scratch mode" width="640">
 
-A green banner confirms *"Create from scratch mode. You can now start editing."* Click **CLEAR** to discard everything and start over. See [Section 5.2](#52-adding-a-new-field) for how to add fields.
+A green message confirms *"Create from scratch mode. You can now start editing."* Click **CLEAR** to throw everything away and start again. To add fields, see [Section 6.2](#62-adding-a-field).
 
 ---
 
-## 3. The Form Interface
+## 3. Filling In the Form
 
-Once a schema is loaded, Adamant renders it as an interactive form: each field becomes a labelled input, and required fields are marked with an asterisk (*).
+Once a schema is loaded, it appears as a form.
 
-![Loaded form](screenshots/04_form_loaded.png)
+<img src="screenshots/04_form_loaded.png" alt="Loaded form" width="640">
 
-**What you see in normal (non-edit) mode:**
+- Each field has a **label** and, underneath, a short **description** explaining what to enter.
+- Fields marked with an asterisk (\*) are **required**.
+- Depending on the field, you type text or a number, choose from a list, tick a checkbox, or pick a file. See [Section 8](#8-field-types).
+- Grouped fields appear in **sections** that you can expand and collapse.
+- If a field has a unit, such as **[kV]**, the unit is shown inside the input box.
 
-- **Field label**, the human-readable name, from the schema's `title` keyword.
-- **Input widget**, a text box, number input, dropdown (`enum` fields), checkbox (`boolean`), or collapsible section (`object`/`array` types). Units placed in square brackets in a field's title (e.g. `Acceleration Voltage [kV]`) are shown as a subtle suffix inside the input.
-- **Helper text**, a description below each input, from the schema's `description` keyword.
-- **Schema header**, the schema's title, description, and a row of action buttons (edit mode toggle, upload input data, JSON viewer icon), covered in the next sections.
-- **Bottom bar**, **Download Schema/Data** and **Proceed**, covered in [Sections 8](#8-downloading-your-work) and [9](#9-reviewing-and-submitting-a-form).
+Above the form you find the schema's title and description, plus these buttons:
+
+| Button | What it does |
+|---|---|
+| **EDIT MODE: OFF / ON** | Switches Edit Mode on or off. See [Section 6](#6-editing-a-schema). |
+| **UPLOAD INPUT DATA** | Fills the form with data you saved earlier. See [Section 4.2](#42-restoring-saved-data). |
+| **JSON icon** | Shows the schema behind the form, read-only. You can copy it from there. |
+
+At the bottom of the form are **DOWNLOAD SCHEMA/DATA** ([Section 4.1](#41-downloading)) and **PROCEED** ([Section 5](#5-reviewing-and-submitting)).
 
 ---
 
-## 4. Viewing the Raw JSON Schema
+## 4. Saving and Restoring Your Work
 
-The small `{}` icon button in the schema header opens the **JSON Schema Viewer**, a read-only view of the raw JSON Schema behind the current form.
+Adamant does not save your entries automatically. To keep your work, download it before you leave the page.
 
-![JSON Schema Viewer](screenshots/05_json_schema_viewer.png)
+### 4.1 Downloading
 
-Use it to check the exact keywords on a field, inspect `$defs`/`definitions`, verify the `$schema` URI, or copy the raw schema text via the copy-to-clipboard button.
+Click **DOWNLOAD SCHEMA/DATA** at the bottom of the form.
 
----
-
-## 5. Edit Mode
-
-Edit Mode lets you change the schema's structure, rename fields, add or remove them, change data types, adjust validation constraints. It does **not** touch the data you've already filled in.
-
-Click **EDIT MODE: OFF** in the schema header to turn it on; it switches to **EDIT MODE: ON**.
-
-![Edit mode on](screenshots/06_edit_mode_on.png)
-
-With Edit Mode on, every field gets a **pencil** (edit) and **bin** (delete) icon, and a **six-dot drag handle** appears on its left for reordering. Two extra icons appear next to the JSON viewer: a **pencil** to edit the schema header, and a **clock/revert** icon to undo all edits. An **+ ADD ELEMENT** button appears at the bottom of the form and of every object section.
-
-### 5.1 Editing a Field
-
-Click the pencil next to any field to open its editor.
-
-![Edit field dialog](screenshots/07_edit_field_dialog.png)
-
-The dialog has two sections. **Basic Descriptors** covers identity and labelling:
-
-| Field | Controls |
-|---|---|
-| Field Keyword | The JSON property key used in the schema and the output data. |
-| Field ID/URI | An optional `$id` for the field. |
-| Field Title | The human-readable label shown in the form. |
-| Field Description | Helper text shown below the input. |
-
-**Validation Related** adapts to the chosen **Field Data Type**, see [Section 11](#11-field-types-reference) for the full set of constraints available per type (min/max, pattern, format, enum, tuple items, and so on). A **Required** checkbox is available for every type.
-
-Click **SAVE** to apply, **CANCEL** to discard.
-
-### 5.2 Adding a New Field
-
-Scroll to the bottom of the form (or of an object sub-section) and click **+ ADD ELEMENT**.
-
-![Add element dialog](screenshots/08_add_element_dialog.png)
-
-Fill in the Field Keyword (required), optionally a title and description, then choose the **Field Data Type**:
-
-![Field Data Type dropdown](screenshots/09_add_element_type_dropdown.png)
-
-| Type | Notes |
-|---|---|
-| `string` | Optional min/max length, regex pattern, semantic format (email, date-time, uri, uuid, …), or an enumerated list of fixed choices. |
-| `number` / `integer` | Min/max, exclusive min/max, and a "multiple of" constraint. |
-| `object` | Creates a collapsible sub-section with its own nested fields. |
-| `array` | A repeatable list; enable **Tuple array** to give each position its own fixed type instead. |
-| `boolean` | A checkbox. |
-| `null` | A field whose only valid value is `null`. |
-| `fileupload (string)` | An Adamant-specific extension: renders a file picker whose selected file is stored as a string value. |
-
-Set any validation constraints and click **ADD**.
-
-### 5.3 Deleting a Field
-
-Click the **bin** icon next to a field. It's removed immediately. This can't be undone field-by-field, use the revert icon ([5.6](#56-undoing-your-changes)) to roll back everything at once.
-
-### 5.4 Reordering Fields
-
-Grab the **six-dot handle** on the left of a field and drag it up or down. The schema's property order updates to match.
-
-### 5.5 Editing the Schema Header
-
-The pencil icon next to the JSON viewer icon (visible only in Edit Mode) opens the schema-level editor, title, description, ID, and specification version, not any individual field.
-
-![Edit schema header dialog](screenshots/10_edit_schema_header_dialog.png)
-
-| Field | Controls |
-|---|---|
-| **$schema** | The JSON Schema specification version. See [Section 6](#6-supported-json-schema-specifications). |
-| **Schema ID** | The `$id` URI for the schema as a whole. |
-| **Schema Title** | The title shown at the top of the form. |
-| **Schema Description** | The description shown below the title. |
-
-Click **SAVE** or **CANCEL**.
-
-### 5.6 Undoing Your Changes
-
-Click the **clock/revert icon** in the schema header (visible when Edit Mode is on) to roll back every edit made during the current session, restoring the originally-loaded schema.
-
----
-
-## 6. Supported JSON Schema Specifications
-
-Adamant supports four JSON Schema specification versions ("dialects"), selectable from the **$schema** dropdown inside the schema-header editor:
-
-![$schema dropdown open](screenshots/11_schema_dialect_dropdown_open.png)
-
-| Dialect | `$schema` URI |
-|---|---|
-| **Draft-04** | `http://json-schema.org/draft-04/schema#` |
-| **Draft-07** | `http://json-schema.org/draft-07/schema#` |
-| **Draft 2019-09** | `https://json-schema.org/draft/2019-09/schema` (or the equivalent `http://` URI) |
-| **Draft 2020-12** | `https://json-schema.org/draft/2020-12/schema` (or the equivalent `http://` URI) |
-
-Adamant validates each schema and its form data against the rules of whichever dialect its `$schema` URI declares, and flags schemas that use a keyword their declared dialect doesn't support. The three most commonly used are compared below (Draft-04 predates most of this and is supported mainly for legacy schemas).
-
-**Draft-07**
-- `definitions` for reusable sub-schemas.
-- `$ref` siblings are silently ignored, only the referenced schema applies.
-- `exclusiveMinimum`/`exclusiveMaximum` are standalone numbers (this changed from Draft-04's boolean-modifier form back in Draft-06, and hasn't changed since).
-- `dependencies` for conditional required fields.
-- Tuple arrays use `items` as an array of schemas.
-
-**Draft 2019-09**
-- `$defs` replaces `definitions` (both are still accepted).
-- `$ref` siblings are honoured, the referenced schema and any sibling keywords are merged together.
-- `dependencies` splits into `dependentRequired` and `dependentSchemas`.
-- `unevaluatedProperties` is introduced, for closing an object built out of `allOf`/`anyOf`/`oneOf`.
-- Tuple arrays still use `items` as an array, same as Draft-07.
-
-**Draft 2020-12**
-- Same `$ref`-sibling and `$defs`/`dependentRequired` behaviour as 2019-09.
-- Tuple arrays switch to `prefixItems`; `items` now only constrains elements *beyond* the tuple.
-
-![2019-09 schema loaded](screenshots/22_dialect_2019_09_loaded.png)
-
-![2020-12 schema loaded](screenshots/23_dialect_2020_12_loaded.png)
-
-Switching the `$schema` dropdown to a different dialect does not automatically rewrite your schema's keywords for you, pick the dialect that matches how the schema is actually written, or update the keywords yourself to match the dialect you choose.
-
----
-
-## 7. Uploading Pre-filled Data
-
-To reload form data saved from an earlier session, click **upload input data** in the schema header.
-
-![Upload input data menu](screenshots/12_upload_input_data_menu.png)
-
-| Option | Source |
-|---|---|
-| **Local file** | Always available, pick a `.json` data file from your computer. |
-| **NextCloud** | Pick a data file from your connected NextCloud folder. |
-| **eLabFTW** / **eLabFTW (external)** | Pick a data file attached to an eLabFTW experiment. |
-
-The service options are disabled until you connect that service (see [Section 10](#10-connecting-external-services)); once connected they light up:
-
-![Upload input data menu, connected](screenshots/25_upload_input_data_menu_connected.png)
-
-The data must have been created with the *same* schema, matching fields are filled in; anything else is ignored.
-
----
-
-## 8. Downloading Your Work
-
-Click **Download Schema/Data** at the bottom of the form.
-
-![Download menu](screenshots/13_download_menu.png)
+<img src="screenshots/13_download_menu.png" alt="Download menu" width="640">
 
 | Option | What you get |
 |---|---|
-| **Download JSON Schema** | The current schema, including any Edit Mode changes, as a `.json` file. |
-| **Download JSON Data** | The data you filled in, as a `.json` file, reload it later with **Upload Input Data**. |
-| **Download Description List** | An HTML-formatted summary of every field and its value, handy for pasting into lab notebooks or reports. |
+| **Download JSON Data** | Your entries, as a file you can load again later. |
+| **Download JSON Schema** | The schema itself, including any changes you made in Edit Mode. |
+| **Download Description List** | A readable summary of every field and its value, handy for reports or lab notebooks. |
+
+### 4.2 Restoring Saved Data
+
+1. Load the **same schema** you used when you saved the data.
+2. Click **UPLOAD INPUT DATA**.
+3. Choose where the data file is:
+
+| Option | Source |
+|---|---|
+| **Local file** | A data file on your computer. |
+| **NextCloud** | A data file in your NextCloud account. Requires a NextCloud connection. |
+| **eLabFTW** | A data file attached to an eLabFTW experiment. Requires an eLabFTW connection. |
+
+Adamant fills in every field that matches. Anything that does not match the current schema is ignored.
+
+<!-- Screenshot to retake: upload input data menu (Local file, NextCloud, eLabFTW). -->
 
 ---
 
-## 9. Reviewing and Submitting a Form
+## 5. Reviewing and Submitting
 
-When you're ready, click **Proceed** at the bottom right.
+When you have finished, click **PROCEED** at the bottom right.
 
-Adamant validates the form data against the schema first. Missing required fields or constraint violations are marked inline in red and summarized in a toast:
+**1. Check.** Adamant first checks your entries. If something is missing or invalid, the affected fields are marked in red and a message lists the problems.
 
-![Validation errors](screenshots/14_proceed_validation_error.png)
+<img src="screenshots/14_proceed_validation_error.png" alt="Validation errors" width="640">
 
-Fix the highlighted fields and click **Proceed** again. Once everything validates, the **Form review and submission** dialog opens with a full summary table of every field and value:
+Correct the marked fields and click **PROCEED** again. An empty form cannot be submitted.
 
-![Form review dialog](screenshots/15_proceed_review_dialog.png)
+**2. Submit.** When everything is in order, a review window opens. Click **SUBMIT** to choose what to do with your data, or **CANCEL** to go back and make changes. The options under **SUBMIT** depend on how Adamant has been set up at your institution and on which accounts you have connected. Options that are not available to you are grayed out. Typical options are:
 
-- Click **CANCEL** to go back and make corrections.
-- Click **SUBMIT** to continue, depending on how Adamant is configured and which services you're connected to, you may be offered options such as creating an eLabFTW experiment or uploading the dataset to NextCloud.
-
-**Uploading to NextCloud:** after choosing **Submit Dataset to NextCloud** and picking a destination folder, a **Confirm the file names** dialog opens with two editable fields before anything is actually sent:
-
-| Field | Default value | Behavior |
+| Option | What it does | Needs |
 |---|---|---|
-| **File name** | The form's `URN` field value, sanitized into a filesystem-safe name (or `metadata` if the schema has no `URN` field) | Edit freely, this becomes the metadata `.json` file's name. |
-| **Schema file name** | The file name above with `-schema` appended | Mirrors the file name above as you edit it, until you edit this field directly, from then on your own choice is kept, even if you go back and change the file name again. |
+| **Create eLabFTW Experiment** | Creates a new eLabFTW experiment from your entries. | eLabFTW connection |
+| **Submit Dataset to NextCloud** | Uploads your entries, the schema, and any attached files to a NextCloud folder. | NextCloud connection |
 
-Click **Upload** to send both files, plus any attached resource files, to the chosen NextCloud folder.
+**Uploading to NextCloud.** After you choose **Submit Dataset to NextCloud** and pick a folder, Adamant asks you to confirm the file names:
 
----
-
-## 10. Connecting External Services
-
-Click **CONNECT** in the top-right corner to open the connection menu.
-
-![Connect menu](screenshots/16_connect_menu.png)
-
-Each option is disabled once you're already connected to that service, and stays open in a chip in the top bar showing who you're connected as:
-
-![Connected top bar](screenshots/24_connected_top_bar.png)
-
-Click the **×** on a chip to disconnect.
-
-### 10.1 eLabFTW (Your Institution's Instance)
-
-Click **eLabFTW**.
-
-![eLabFTW login dialog](screenshots/17_elabftw_login_dialog.png)
-
-The server URL is pre-configured by whoever deployed Adamant for your institution, you only enter your **email** and your **eLabFTW API token** (generate one from your eLabFTW profile under *API keys*; see the *More info* link in the dialog). Click **CONTINUE**.
-
-### 10.2 eLabFTW (External Instance)
-
-Click **eLabFTW (external)** to connect a *different* eLabFTW instance than the one your institution pre-configured, useful for collaborating with another lab.
-
-![eLabFTW external login dialog](screenshots/18_elabftw_external_login_dialog.png)
-
-Enter the instance's URL, your email, and your API token for that instance, then **CONTINUE**.
-
-### 10.3 NextCloud
-
-Click **NextCloud**.
-
-![NextCloud login dialog](screenshots/19_nextcloud_login_dialog.png)
-
-Like eLabFTW, the server URL is pre-configured by your institution. Enter your NextCloud **username** and an **app password** (not your account password), generate one in NextCloud under *Settings → Security → Devices & sessions*, name it (e.g. "Adamant"), and click *Create new app password*. Click **CONTINUE**.
-
-### 10.4 Remember Me
-
-Every connection dialog has a **"Remember me on this device"** checkbox.
-
-- **Unchecked (default)**, your login is kept only for the current browser session (it survives page reloads, but is cleared when the browser closes).
-- **Checked**, your login is kept in the browser's local storage and survives closing and reopening the browser, until you disconnect or uncheck it on a later login.
-
-What's stored is always a revocable, scoped credential (an eLabFTW API token or a NextCloud app password), never your account password, so you can invalidate access at any time from that service's own security settings, regardless of what Adamant has stored locally. Logging out only ends the active connection; it does not erase a remembered username/token, so reconnecting later is a single click rather than retyping everything.
-
-### 10.5 Disconnecting
-
-Click the **×** on a service's chip in the top bar, or reopen its dialog, logging out clears the active connection but, per [10.4](#104-remember-me), keeps a remembered login ready for next time.
-
----
-
-## 11. Field Types Reference
-
-| Type | Rendered as | Key validation options |
+| Field | Suggested name | Notes |
 |---|---|---|
-| `string` | Text box (or dropdown if enumerated) | Min/max length, regex pattern, semantic format (`email`, `date-time`, `uri`, `uuid`, …), enumerated list |
-| `number` | Text box | Minimum/maximum, exclusive minimum/maximum, multiple of |
-| `integer` | Text box | Same as `number`, integer values only |
-| `boolean` | Checkbox |, |
-| `null` |, | Only valid value is `null` |
-| `object` | Collapsible section | Nested fields, each independently required/optional |
-| `array` | Repeatable list, or a fixed-position tuple | Min/max items, unique items; tuple mode gives each position its own type |
-| `fileupload (string)` | File picker | Adamant-specific; stores the selected file as a string value |
+| **File name** | Taken from the form's URN field, or `metadata` if the form has none. | Name of your data file. Change it if you like. |
+| **Schema file name** | The file name with `-schema` added. | Updates automatically as you change the file name, until you edit it yourself. |
 
-Every type also has a **Required** checkbox, and every field can carry a **Field Description** shown as helper text under the input.
+Click **Upload** to send the files.
 
 ---
 
-## 12. Frequently Asked Questions
+## 6. Editing a Schema
 
-**Can I use Adamant without a server?**
+Edit Mode lets you change the form itself: add, remove, rename, and reorder fields, or change what counts as a valid entry.
 
-Yes. Adamant runs entirely in the browser with no back-end required for form-filling and editing. Without a server connection the built-in schema list is limited to what's bundled into the app, and NextCloud/eLabFTW connections aren't available, everything else, including **Browse local file…**, works the same.
+Click **EDIT MODE: OFF** above the form. It changes to **EDIT MODE: ON**.
 
-**How do I save my work and come back later?**
+<img src="screenshots/06_edit_mode_on.png" alt="Edit mode on" width="640">
 
-Use **Download JSON Data** ([Section 8](#8-downloading-your-work)). Next time you open the same schema, use **Upload Input Data → Local file** ([Section 7](#7-uploading-pre-filled-data)) to restore your entries.
+In Edit Mode:
 
-**Can I add fields that aren't in the original schema?**
+- Each field has a **pencil** icon (edit) and a **bin** icon (delete).
+- A **drag handle** (six dots) appears to the left of each field.
+- **ADD ELEMENT** appears at the bottom of the form and of each section.
+- Two extra icons appear next to the JSON icon: a **pencil** to edit the schema's title and description, and a **clock** icon to undo all changes.
 
-Yes, with Edit Mode on: click **+ ADD ELEMENT** wherever you want the new field. See [Section 5.2](#52-adding-a-new-field).
+Changes in Edit Mode only affect the form in your browser. To keep them, use **Download JSON Schema** ([Section 4.1](#41-downloading)).
 
-**I made a mess in Edit Mode. Can I undo everything?**
+### 6.1 Editing a Field
 
-Click the clock/revert icon in the schema header (visible while Edit Mode is on), see [Section 5.6](#56-undoing-your-changes).
+Click the pencil next to a field.
 
-**Which field types does Adamant support?**
+**Basic Descriptors:**
 
-`string`, `number`, `integer`, `object`, `array`, `boolean`, `null`, and the Adamant-specific `fileupload (string)`. See [Section 11](#11-field-types-reference).
+| Setting | Meaning |
+|---|---|
+| **Field Keyword** | The field's internal name, used in the saved data. Required and must be unique. |
+| **Field ID/URI** | An optional identifier for the field. |
+| **Field Title** | The label shown on the form. |
+| **Field Description** | The help text shown under the field. |
 
-**My schema uses `$ref`. Will Adamant handle it?**
+**Validation Related:** choose the **Field Data Type** and set any rules for valid entries, such as a minimum or maximum, a list of allowed values, or whether the field is **Required**. The rules available depend on the type; see [Section 8](#8-field-types).
 
-For references within the same document (`#/$defs/...`, `#/definitions/...`), yes, Adamant resolves and renders them, and merges sibling keywords for 2019-09/2020-12 schemas as the spec requires (ignoring them for Draft-07, also per spec). References to *external* documents (a `$ref` pointing at a separate URL or file) are not resolved.
+Click **Save** to apply your changes, or **Cancel** to discard them.
 
-**Is "Remember me" safe to use?**
+### 6.2 Adding a Field
 
-See [Section 10.4](#104-remember-me). It only ever stores a revocable API token or app password, never your account password, and is opt-in per connection.
+Click **ADD ELEMENT** at the bottom of the form, or at the bottom of a section to add a field inside that section.
 
-**I see "Connection to server is established" in a green notification. What does that mean?**
+Enter a **Field Keyword**, optionally a title and description, and choose a **Field Data Type**:
 
-Adamant reached its back-end API, which provides the full built-in schema list and enables NextCloud/eLabFTW integration. Without it you're in offline mode; everything except those integrations still works.
+<img src="screenshots/09_add_element_type_dropdown.png" alt="Field Data Type dropdown" width="640">
 
-**How do I cite Adamant?**
+Set any rules you need and click **Add**.
 
-Please cite the accompanying article:
+### 6.3 Deleting a Field
 
-> Chaerony Siffa, I., Schäfer, J., & Becker, M. M. (2022). Adamant: a JSON schema-based metadata editor for research data management workflows [version 2; peer review: 3 approved]. *F1000Research*, 11, 475. https://doi.org/10.12688/f1000research.110875.2
+Click the bin icon next to a field. The field is removed immediately and there is no confirmation. To get it back, undo all changes ([Section 6.6](#66-undoing-all-changes)).
+
+### 6.4 Reordering Fields
+
+Drag a field up or down by its six-dot handle.
+
+### 6.5 Editing the Schema Title and Description
+
+Click the pencil icon next to the JSON icon.
+
+<img src="screenshots/10_edit_schema_header_dialog.png" alt="Edit schema header dialog" width="640">
+
+| Setting | Meaning |
+|---|---|
+| **$schema** | The schema version. See below. |
+| **Schema ID** | An optional identifier for the whole schema. |
+| **Schema Title** | The title shown above the form. |
+| **Schema Description** | The text shown under the title. |
+
+**Schema versions.** Adamant supports four versions of the JSON Schema standard: Draft-04, Draft-07, 2019-09, and 2020-12. Adamant checks your form against whichever version the schema uses. Changing the version here does not rewrite the rest of the schema, so only change it if you know the schema was written for that version. For new schemas, the latest version (2020-12) is recommended.
+
+<img src="screenshots/11_schema_dialect_dropdown_open.png" alt="$schema dropdown open" width="640">
+
+Click **Save** or **Cancel**.
+
+### 6.6 Undoing All Changes
+
+Click the clock icon above the form to return to the schema as it was when you loaded it.
+
+**Note:** this also clears everything you have entered in the form. Download your data first if you want to keep it.
+
+---
+
+## 7. Connecting NextCloud and eLabFTW
+
+Connecting an account lets you load schemas and data from it and send your finished data to it.
+
+Click **CONNECT** in the top-right corner and choose **NextCloud** or **eLabFTW**. Once connected, the account appears at the top of the page with your name, and that menu entry is grayed out.
+
+<img src="screenshots/16_connect_menu.png" alt="Connect menu" width="640">
+
+<!-- Screenshot to retake: top bar with connected accounts. -->
+
+You can be connected to NextCloud and eLabFTW at the same time, but only to one eLabFTW instance at a time. To switch to a different eLabFTW instance, disconnect first ([Section 7.4](#74-disconnecting)).
+
+### 7.1 eLabFTW
+
+Click **CONNECT**, then **eLabFTW**. The **Connect with eLabFTW** window opens, where you choose which eLabFTW to connect to.
+
+You need an eLabFTW **API token** for the instance you connect to. If you do not have one yet, log in to that eLabFTW and create an API key in your profile settings. The **More info** link in the window explains how.
+
+**Your institution's eLabFTW**
+
+<img src="screenshots/17_elabftw_login_dialog.png" alt="Connect with eLabFTW, institution's instance" width="222">
+
+1. Leave **This institution's eLabFTW** selected.
+2. Enter your **Email** and your **Token**.
+3. Click **Continue**.
+
+**A different eLabFTW instance** (for example, a partner lab's)
+
+<img src="screenshots/18_elabftw_external_login_dialog.png" alt="Connect with eLabFTW, different instance" width="222">
+
+1. Select **A different eLabFTW instance**. A third field, **eLabFTW instance URL**, appears.
+2. In **eLabFTW instance URL**, enter the web address of that eLabFTW, for example `https://demo.elabftw.net`. Use the address you normally open in your browser to log in.
+3. In **Email**, enter the email address of the demo account. See [Finding your email and API token](#finding-your-email-and-api-token).
+4. In **Token**, enter an API token created on that demo instance. See [Finding your email and API token](#finding-your-email-and-api-token).
+5. Click **Continue**.
+
+#### Finding your email and API token
+
+You find both in the eLabFTW instance you want to connect to.
+
+1. Log in to that eLabFTW in your browser and click your initials in the top-right corner. A menu opens.
+
+   <img src="screenshots/elabFTW-external-login-addresss.png" alt="eLabFTW user menu" width="884">
+
+2. Click **My profile**. Your email address is shown under your name. Enter it in the **Email** field in Adamant.
+
+   <img src="screenshots/elabFTW-external-login-username.png" alt="eLabFTW profile page showing the email address" width="877">
+
+3. Open the menu again and click **Settings**, then the **API KEYS** tab.
+4. Under **Create new key**, enter a **Name** (for example "Adamant"), leave **Permissions** at **Read/Write**, and click **Generate an API Key**.
+5. Copy the key and paste it into the **Token** field in Adamant.
+
+   <img src="screenshots/elabFTW-external-api-key.png" alt="eLabFTW Settings, API KEYS tab" width="891">
+
+### 7.2 NextCloud
+
+Click **CONNECT**, then **NextCloud**.
+
+<img src="screenshots/19_nextcloud_login_dialog.png" alt="NextCloud login dialog" width="640">
+
+1. Enter your NextCloud **Username**.
+2. Enter an **App Password**. Do not use your normal NextCloud password. To create an app password, go to NextCloud **Settings > Security > Devices & sessions**, enter a name such as "Adamant", and click **Create new app password**.
+3. Click **Continue**.
+
+### 7.3 Remember Me
+
+Each connection window has a **Remember me on this device** checkbox.
+
+- **Not ticked (default):** you stay connected while the browser is open, including after reloading the page. Closing the browser ends the connection.
+- **Ticked:** your login is kept on this computer, even after you close the browser. To stop this, connect again with the box unticked.
+
+Adamant doesn't store your eLabFTW token or NextCloud app password in the server. Only at the local browser storage when you click **Remember me**.
+
+### 7.4 Disconnecting
+
+Click the **x** on the account's name at the top of the page. When you connect again later, your login details are already filled in, so you only need to click **Continue**.
+
+---
+
+## 8. Field Types
+
+| Type | Shown as | Rules you can set |
+|---|---|---|
+| `string` | Text box, or a drop-down list if you set allowed values | Minimum and maximum length, a required pattern, a format such as email or date, or a fixed list of allowed values |
+| `number` | Number box | Minimum and maximum, and "multiple of" |
+| `integer` | Number box, whole numbers only | Same as `number` |
+| `boolean` | Checkbox | None |
+| `object` | A section containing other fields | Its own fields, each required or optional |
+| `array` | A list where you can add several entries | Minimum and maximum number of entries, no duplicates. Tick **Tuple array** to give each position in the list its own type. |
+| `null` | No input | The field can only be empty |
+| `fileupload (string)` | A file picker | Lets the user attach a file |
+
+Every type can be marked as **Required**, and every field can have a description that is shown under it.
