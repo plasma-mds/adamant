@@ -2,8 +2,6 @@
 
 Adamant turns a metadata schema into a web form. You pick a schema, fill in the form, and Adamant checks your entries as you go. When you are done, you can download your data or send it straight to NextCloud or eLabFTW.
 
-This manual covers Adamant v1.4.1.
-
 ---
 
 ## Contents
