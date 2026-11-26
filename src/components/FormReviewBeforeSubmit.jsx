@@ -104,10 +104,11 @@ const FormReviewBeforeSubmit = ({ onlineMode, openFormReviewDialog, setOpenFormR
                     }} >
                         {submitText}
                     </MenuItem>
-                    <MenuItem disabled={!onlineMode} onClick={() => {
+                    {/* INPTDAT submission is not implemented yet (submitDataset is a stub) */}
+                    <MenuItem disabled={true} onClick={() => {
                         validateLoadedFiles()
                     }} >
-                        Submit Dataset
+                        Submit Dataset (coming soon)
                     </MenuItem>
                     <MenuItem disabled={!ncConnected} onClick={() => {
                         onSubmitDatasetToNextCloud();

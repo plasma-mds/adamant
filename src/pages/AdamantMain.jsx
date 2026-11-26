@@ -853,7 +853,14 @@ const AdamantMain = () => {
     formData.append("schemaFilename", schemaFilename);
     formData.append("metadata", JSON.stringify(content));
     formData.append("schema", JSON.stringify(contentSchema));
+    // empty slots are resources whose file was not attached in this session (e.g. data
+    // loaded from a file); upload the metadata anyway and tell the user which were skipped
+    let missingFiles = 0;
     for (let i = 0; i < loadedFiles.length; i++) {
+      if (!loadedFiles[i]) {
+        missingFiles++;
+        continue;
+      }
       formData.append("files", loadedFiles[i], loadedFiles[i]["name"]);
     }
 
@@ -873,6 +880,12 @@ const AdamantMain = () => {
           return;
         }
         toast.success("Dataset uploaded to NextCloud!", { toastId: "ncUploadSuccess" });
+        if (missingFiles > 0) {
+          toast.warning(
+            `${missingFiles} resource file(s) were not attached in this session and were not uploaded. Only their metadata was saved.`,
+            { toastId: "ncUploadMissingFiles" }
+          );
+        }
         setOpenNcUploadFilenameDialog(false);
       },
       error: function () {
@@ -890,6 +903,8 @@ const AdamantMain = () => {
     setDisable(true);
     setCreateScratchMode(false);
     setJsonData({});
+    // files attached for a previous schema don't belong to this one
+    setLoadedFiles([]);
 
     let convertedSchema = JSON.parse(JSON.stringify(rawSchema));
     try {

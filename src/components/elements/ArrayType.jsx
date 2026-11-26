@@ -88,7 +88,9 @@ const ArrayType = ({ adamant_field_error, adamant_error_description, maxItems, m
             setDataInputItems([{}])
         }
 
-        if (value !== undefined) {
+        // only the "resource" array has files attached; reserving slots for any other array
+        // (e.g. a list of tags) leaves empty entries in loadedFiles that break the upload
+        if (value !== undefined && field_key === "resource") {
             if (value.length !== 0 && loadedFiles.length === 0){
                 setLoadedFiles(Array(value.length))
             }
@@ -731,7 +733,9 @@ const ArrayType = ({ adamant_field_error, adamant_error_description, maxItems, m
                     }
                     if (keyword !== undefined) {
                         const fileIndex = getFileIndex(loadedFiles, keyword)
-                        handleRemoveFile(fileIndex)
+                        // file never attached: drop this item's empty slot so the
+                        // remaining resources keep their file positions
+                        handleRemoveFile(fileIndex > -1 ? fileIndex : (field_key === "resource" ? index : -1))
                     } else {
                         handleRemoveFile(index)
                     }

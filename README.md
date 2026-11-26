@@ -23,6 +23,14 @@ Accompanying article can be found at: https://f1000research.com/articles/11-475/
 
 # Changelog
 
+## [1.4.2] November 26, 2026
+### Fixed
+- "Submit Dataset to NextCloud" no longer fails silently when loaded data contains lists or resources without attached files.
+- Deleting a resource entry without an attached file no longer crashes.
+
+### Changed
+- "Submit Dataset" (INPTDAT submission) is disabled until it is implemented.
+
 ## [1.4.1] October 5, 2026
 ### Added
 - NextCloud metadata file named from a configurable schema field (`nextcloud-filename-field`, default `URN`), with a `metadata` fallback.
