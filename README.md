@@ -21,57 +21,6 @@ Accompanying article can be found at: https://f1000research.com/articles/11-475/
 > [!WARNING]  
 > Please refrain from creating your schema with the `draft-4` specification. It will be deprecated in one of future releases.
 
-# Changelog
-
-## [1.4.2] November 26, 2026
-### Fixed
-- "Submit Dataset to NextCloud" no longer fails silently when loaded data contains lists or resources without attached files.
-- Deleting a resource entry without an attached file no longer crashes.
-
-### Changed
-- "Submit Dataset" (INPTDAT submission) is disabled until it is implemented.
-
-## [1.4.1] October 5, 2026
-### Added
-- NextCloud metadata file named from a configurable schema field (`nextcloud-filename-field`, default `URN`), with a `metadata` fallback.
-- Editable schema file name on NextCloud upload.
-- Loading indicator for slow NextCloud/eLabFTW lookups, schema rendering, and uploads.
-- Upload input data can read from NextCloud and eLabFTW (internal and external).
-
-### Changed
-- Docker: non-root API container with health check, client starts after the API is healthy, 300-second timeouts.
-- Schema search clears on reopen; connected services are shown in a distinct color.
-
-## [1.4.0] September 9, 2026
-- Draft-07, 2019-09, and 2020-12 dialect support across rendering, editing, and validation ([#4](https://github.com/plasma-mds/adamant/issues/4)).
-- `null` type field support.
-- NextCloud integration: connect, browse, upload, and download.
-- External eLabFTW connection alongside the internal one.
-- "Load schema from URL".
-- Optional "Remember me" for NextCloud and eLabFTW logins.
-- "Create eLabFTW Experiment" uses the currently connected instance.
-- Stricter schema-specification validation; no crash on unknown dialects.
-- Fixed Draft-04-style `exclusiveMinimum`/`exclusiveMaximum` in the Draft-07 demo schema.
-- All `npm audit` advisories resolved.
-
-## [1.3.2] May 11, 2026
-### Fixed
-- Critical security fixes.
-- Data persistence bug in NumberType/IntegerType: cleared fields are removed from form state.
-### Changed
-- Migrated the frontend build to Vite.
-- "UPLOAD INPUT DATA" text button replaces the icon.
-- Docker files updated.
-- `demo-schema.json` and `plasma-mds.json` moved to `draft-7`.
-
-## [1.3.1] December 17, 2025
-### Fixed
-- New experiments are created with "Running" status.
-- Update experiment fixed.
-### Note
-- Backend `api.py` works with [eLabFTW v5.3.10](https://www.deltablot.com/posts/release-50300/).
-
-
 # Main use cases
 # <img src="src/assets/adamant-usecases.svg" alt="drawing" style="width:100%;"/>
 
